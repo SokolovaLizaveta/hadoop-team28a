@@ -740,7 +740,7 @@ hdfs://team-28-nn:9000
 
 Конфигурация отличается значением `dfs.datanode.hostname`, а на узле NameNode дополнительно задается `dfs.namenode.rpc-bind-host`.
 
-## Конфигурация `team-28-nn`
+### Конфигурация `team-28-nn`
 
 На `team-28-nn` работают:
 
@@ -814,7 +814,7 @@ ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
 
 ---
 
-## Конфигурация `team-28-00`
+### Конфигурация `team-28-00`
 
 На `team-28-00` работают:
 
@@ -883,7 +883,7 @@ ssh -i ~/.ssh/team28a_internal team28a@team-28-00 \
 
 ---
 
-## Конфигурация `team-28-01`
+### Конфигурация `team-28-01`
 
 На `team-28-01` работает:
 
