@@ -1223,7 +1223,7 @@ http://localhost:9870
 team-28-nn:9000 (active)
 ```
 
-![Active NameNode](images/namenode-active.png)
+![Active NameNode](images/namenode-active.jpg)
 
 Это подтверждает, что NameNode запущен на `team-28-nn` и работает с RPC-адресом `team-28-nn:9000`.
 
@@ -1238,7 +1238,7 @@ Total Datanode Volume Failures: 0
 Number of Under-Replicated Blocks: 0
 ```
 
-![Cluster health](images/cluster-health.png)
+![Cluster health](images/cluster-health.jpg)
 
 Таким образом:
 
