@@ -66,6 +66,7 @@ team-28-00
 team-28-01
 └── DataNode #3
 ```
+<EDGE_IP> — внешний IP edge-узла, предоставленный преподавателем.
 
 ## 2. Пользователи и SSH-доступ
 
@@ -122,7 +123,7 @@ sudo chmod 600 /home/team28a/.ssh/authorized_keys
 Вход на edge-узел:
 
 ```bash
-ssh team28a@2.59.83.133
+ssh team28a@<EDGE_IP>
 ```
 
 ### Внутренний SSH-доступ
@@ -1798,7 +1799,7 @@ Web UI NameNode использует порт:
 На локальном компьютере выполняем:
 
 ```bash
-ssh -N -L 9870:team-28-nn:9870 team28a@2.59.83.133
+ssh -N -L 9870:team-28-nn:9870 team28a@<EDGE_IP>
 ```
 
 После создания туннеля открываем в браузере:
@@ -1851,7 +1852,7 @@ Number of Under-Replicated Blocks: 0
 Last Checkpoint Time
 ```
 
-что позволяет проверить наличие актуального checkpoint после запуска SecondaryNameNode.
+что подтверждает наличие созданного checkpoint. Работа процесса SecondaryNameNode отдельно проверяется командой jps.
 
 Таким образом, через NameNode Web UI подтверждается работоспособное состояние HDFS-кластера с тремя работающими DataNode.
 
