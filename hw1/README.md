@@ -18,25 +18,25 @@
 
 ## Содержание
 
-- [1. Инфраструктура](#1-инфраструктура)
-- [2. Пользователи и SSH-доступ](#2-пользователи-и-ssh-доступ)
-- [3. Проверка доступа к узлам и разрешения имён](#3-проверка-доступа-к-узлам-и-разрешения-имён)
-- [4. Установка Java и Hadoop](#4-установка-java-и-hadoop)
-- [5. Настройка переменных окружения](#5-настройка-переменных-окружения)
-- [6. Настройка core-site.xml](#6-настройка-core-sitexml)
-- [7. Настройка hdfs-site.xml](#7-настройка-hdfs-sitexml)
-- [8. Создание каталогов HDFS](#8-создание-каталогов-hdfs)
-- [9. Первичная инициализация NameNode](#9-первичная-инициализация-namenode)
-- [10. Первый запуск NameNode и настройка RPC-доступа](#10-первый-запуск-namenode-и-настройка-rpc-доступа)
-- [11. Запуск первого DataNode и настройка hostname](#11-запуск-первого-datanode-и-настройка-hostname)
-- [12. Запуск второго и третьего DataNode](#12-запуск-второго-и-третьего-datanode)
-- [13. Запуск SecondaryNameNode](#13-запуск-secondarynamenode)
-- [14. Функциональная проверка HDFS](#14-функциональная-проверка-hdfs)
-- [15. Проверка целостности и репликации через fsck](#15-проверка-целостности-и-репликации-через-fsck)
-- [16. Финальная проверка процессов](#16-финальная-проверка-процессов)
-- [17. Проверка логов Hadoop](#17-проверка-логов-hadoop)
-- [18. Проверка кластера через NameNode Web UI](#18-проверка-кластера-через-namenode-web-ui)
-- [19. Итог](#19-итог)
+1. [Инфраструктура](#1-инфраструктура)
+2. [Пользователи и SSH-доступ](#2-пользователи-и-ssh-доступ)
+3. [Проверка доступа к узлам и разрешения имён](#3-проверка-доступа-к-узлам-и-разрешения-имён)
+4. [Установка Java и Hadoop](#4-установка-java-и-hadoop)
+5. [Настройка переменных окружения](#5-настройка-переменных-окружения)
+6. [Настройка core-site.xml](#6-настройка-core-sitexml)
+7. [Настройка hdfs-site.xml](#7-настройка-hdfs-sitexml)
+8. [Создание каталогов HDFS](#8-создание-каталогов-hdfs)
+9. [Первичная инициализация NameNode](#9-первичная-инициализация-namenode)
+10. [Запуск NameNode и проверка RPC-доступа](#10-запуск-namenode-и-проверка-rpc-доступа)
+11. [Запуск первого DataNode](#11-запуск-первого-datanode)
+12. [Запуск второго и третьего DataNode](#12-запуск-второго-и-третьего-datanode)
+13. [Запуск SecondaryNameNode](#13-запуск-secondarynamenode)
+14. [Функциональная проверка HDFS](#14-функциональная-проверка-hdfs)
+15. [Проверка целостности и репликации через fsck](#15-проверка-целостности-и-репликации-через-fsck)
+16. [Финальная проверка процессов](#16-финальная-проверка-процессов)
+17. [Проверка логов Hadoop](#17-проверка-логов-hadoop)
+18. [Проверка кластера через NameNode Web UI](#18-проверка-кластера-через-namenode-web-ui)
+19. [Итог](#19-итог)
 
 
 ## 1. Инфраструктура
@@ -149,7 +149,11 @@ ssh-keygen -t ed25519 -f ~/.ssh/team28a_internal -N ""
 
 После настройки SSH был проверен доступ пользователя `team28a` ко всем внутренним виртуальным машинам.
 
-Подключение выполнялось с edge-узла `team-28-en` с использованием внутреннего SSH-ключа:
+Все команды этого раздела выполняются с edge-узла `team-28-en`.
+
+### Проверка SSH-доступа
+
+Подключение выполняется с использованием внутреннего SSH-ключа:
 
 ```bash
 ssh -i ~/.ssh/team28a_internal team28a@team-28-nn
@@ -163,14 +167,31 @@ ssh -i ~/.ssh/team28a_internal team28a@team-28-00
 ssh -i ~/.ssh/team28a_internal team28a@team-28-01
 ```
 
-Успешное подключение ко всем трем узлам подтвердило, что дальнейшую установку и настройку Hadoop можно выполнять непосредственно под пользователем `team28a`.
+Успешное подключение ко всем трем узлам подтверждает, что дальнейшую установку и настройку Hadoop можно выполнять под пользователем `team28a`.
 
-### Проверка hostname
+### Проверка разрешения hostname
 
-На edge-узле было проверено разрешение имен внутренних машин:
+Разрешение имён внутренних машин было проверено отдельно на каждом из трех узлов.
+
+На `team-28-nn`:
 
 ```bash
-getent hosts team-28-nn team-28-00 team-28-01
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'getent hosts team-28-nn team-28-00 team-28-01'
+```
+
+На `team-28-00`:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 \
+  'getent hosts team-28-nn team-28-00 team-28-01'
+```
+
+На `team-28-01`:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-01 \
+  'getent hosts team-28-nn team-28-00 team-28-01'
 ```
 
 Основные внутренние адреса узлов:
@@ -181,7 +202,7 @@ getent hosts team-28-nn team-28-00 team-28-01
 10.28.0.13  team-28-01
 ```
 
-В дальнейшем для обращения к узлам в конфигурации Hadoop используются их hostname:
+Таким образом, внутренние узлы доступны друг другу по hostname:
 
 ```text
 team-28-nn
@@ -189,122 +210,238 @@ team-28-00
 team-28-01
 ```
 
-При проверке также было обнаружено, что собственный hostname виртуальной машины может дополнительно разрешаться в локальный адрес `127.0.1.1`.
+При проверке также было обнаружено, что собственный hostname виртуальной машины может дополнительно разрешаться в локальный loopback-адрес `127.0.1.1`.
 
-Например, для `team-28-nn` присутствовало разрешение как во внутренний адрес `10.28.0.11`, так и в loopback-адрес `127.0.1.1`.
+Например, для `team-28-nn` имя узла могло разрешаться как во внутренний адрес `10.28.0.11`, так и в локальный адрес `127.0.1.1`.
 
-Эта особенность впоследствии потребовала дополнительной настройки адреса, на котором слушает RPC-интерфейс NameNode. Исправление приведено ниже в разделе запуска и настройки NameNode.
+Эта особенность учитывается далее при настройке RPC-интерфейса NameNode.
 
 ## 4. Установка Java и Hadoop
 
-Пользователь `team28a` не имеет прав `sudo`, поэтому Java и Hadoop устанавливались не системно, а непосредственно в домашний каталог пользователя.
+Пользователь `team28a` не имеет прав `sudo`, поэтому Java и Hadoop устанавливаются непосредственно в домашний каталог пользователя.
 
-Для установки использовались:
+Для кластера используются:
 
 - Temurin OpenJDK 11;
 - Apache Hadoop 3.4.3.
 
-На edge-узле `team-28-en` архивы были сохранены в каталог:
+Все команды скачивания и копирования архивов выполняются с edge-узла `team-28-en`.
 
-```text
-/home/team28a/downloads
+### Скачивание архивов
+
+Создаем каталог для загрузок:
+
+```bash
+mkdir -p ~/downloads
+cd ~/downloads
 ```
 
-Использованные источники:
+Скачиваем Apache Hadoop 3.4.3:
 
-```text
-Hadoop 3.4.3:
-https://dlcdn.apache.org/hadoop/common/hadoop-3.4.3/hadoop-3.4.3.tar.gz
-
-Java 11:
-https://api.adoptium.net/v3/binary/latest/11/ga/linux/x64/jdk/hotspot/normal/eclipse
+```bash
+curl -fL --retry 3 \
+  -o hadoop-3.4.3.tar.gz \
+  https://dlcdn.apache.org/hadoop/common/hadoop-3.4.3/hadoop-3.4.3.tar.gz
 ```
 
-Файлы были сохранены как:
+Скачиваем Temurin OpenJDK 11:
+
+```bash
+curl -fL --retry 3 \
+  -o jdk11.tar.gz \
+  "https://api.adoptium.net/v3/binary/latest/11/ga/linux/x64/jdk/hotspot/normal/eclipse"
+```
+
+Проверяем наличие загруженных файлов:
+
+```bash
+ls -lh
+```
+
+В каталоге должны присутствовать:
 
 ```text
-~/downloads/hadoop-3.4.3.tar.gz
-~/downloads/jdk11.tar.gz
+hadoop-3.4.3.tar.gz
+jdk11.tar.gz
 ```
 
 ### Проверка архивов
 
-Перед копированием и распаковкой целостность архивов была проверена:
+Проверяем целостность архива Hadoop:
 
 ```bash
-gzip -t ~/downloads/hadoop-3.4.3.tar.gz
+gzip -t hadoop-3.4.3.tar.gz && echo "HADOOP_ARCHIVE_OK"
 ```
 
-```bash
-gzip -t ~/downloads/jdk11.tar.gz
-```
-
-Команды завершились без ошибок.
-
-### Копирование архивов на узлы
-
-Архивы Java и Hadoop были переданы с edge-узла `team-28-en` на все три внутренние виртуальные машины с помощью `scp` и внутреннего SSH-ключа `team28a_internal`.
-
-Копирование выполнялось на:
+Ожидаемый результат:
 
 ```text
-team-28-nn
-team-28-00
-team-28-01
+HADOOP_ARCHIVE_OK
 ```
 
-После копирования архивы находились в каталоге:
-
-```text
-/home/team28a/downloads
-```
-
-на каждом узле.
-
-### Распаковка
-
-На каждой из трех внутренних машин были созданы каталоги для Java и Hadoop:
+Проверяем архив Java:
 
 ```bash
-mkdir -p ~/apps/java ~/apps/hadoop
+gzip -t jdk11.tar.gz && echo "JAVA_ARCHIVE_OK"
 ```
 
-Java была распакована в:
+Ожидаемый результат:
 
 ```text
-/home/team28a/apps/java
+JAVA_ARCHIVE_OK
 ```
 
-командой:
+### Копирование архивов на внутренние узлы
+
+Сначала создаем каталог `~/downloads` на каждом из трех внутренних узлов:
 
 ```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'mkdir -p ~/downloads'
+```
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 \
+  'mkdir -p ~/downloads'
+```
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-01 \
+  'mkdir -p ~/downloads'
+```
+
+На edge-узле переходим в каталог с архивами:
+
+```bash
+cd ~/downloads
+```
+
+Копируем Java и Hadoop на `team-28-nn`:
+
+```bash
+scp -i ~/.ssh/team28a_internal \
+  hadoop-3.4.3.tar.gz jdk11.tar.gz \
+  team28a@team-28-nn:~/downloads/
+```
+
+Копируем архивы на `team-28-00`:
+
+```bash
+scp -i ~/.ssh/team28a_internal \
+  hadoop-3.4.3.tar.gz jdk11.tar.gz \
+  team28a@team-28-00:~/downloads/
+```
+
+Копируем архивы на `team-28-01`:
+
+```bash
+scp -i ~/.ssh/team28a_internal \
+  hadoop-3.4.3.tar.gz jdk11.tar.gz \
+  team28a@team-28-01:~/downloads/
+```
+
+Проверяем наличие архивов на каждом узле:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'ls -lh ~/downloads'
+```
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 \
+  'ls -lh ~/downloads'
+```
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-01 \
+  'ls -lh ~/downloads'
+```
+
+На каждой машине должны присутствовать файлы:
+
+```text
+hadoop-3.4.3.tar.gz
+jdk11.tar.gz
+```
+
+### Установка на `team-28-nn`
+
+Создаем каталоги и распаковываем Java и Hadoop:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn '
+mkdir -p ~/apps/java ~/apps/hadoop &&
 tar -xzf ~/downloads/jdk11.tar.gz \
   --strip-components=1 \
-  -C ~/apps/java
-```
-
-Hadoop был распакован в:
-
-```text
-/home/team28a/apps/hadoop
-```
-
-командой:
-
-```bash
+  -C ~/apps/java &&
 tar -xzf ~/downloads/hadoop-3.4.3.tar.gz \
   --strip-components=1 \
   -C ~/apps/hadoop
+'
 ```
 
-Параметр `--strip-components=1` удаляет верхний каталог архива при распаковке, поэтому используются постоянные пути `~/apps/java` и `~/apps/hadoop`.
-
-### Проверка версий
-
-После установки была проверена версия Java:
+### Установка на `team-28-00`
 
 ```bash
-~/apps/java/bin/java -version
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 '
+mkdir -p ~/apps/java ~/apps/hadoop &&
+tar -xzf ~/downloads/jdk11.tar.gz \
+  --strip-components=1 \
+  -C ~/apps/java &&
+tar -xzf ~/downloads/hadoop-3.4.3.tar.gz \
+  --strip-components=1 \
+  -C ~/apps/hadoop
+'
+```
+
+### Установка на `team-28-01`
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-01 '
+mkdir -p ~/apps/java ~/apps/hadoop &&
+tar -xzf ~/downloads/jdk11.tar.gz \
+  --strip-components=1 \
+  -C ~/apps/java &&
+tar -xzf ~/downloads/hadoop-3.4.3.tar.gz \
+  --strip-components=1 \
+  -C ~/apps/hadoop
+'
+```
+
+Параметр:
+
+```text
+--strip-components=1
+```
+
+удаляет верхний каталог архива при распаковке. В результате используются одинаковые пути на всех трех машинах:
+
+```text
+/home/team28a/apps/java
+/home/team28a/apps/hadoop
+```
+
+### Проверка установки
+
+Проверяем Java на `team-28-nn`:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  '~/apps/java/bin/java -version'
+```
+
+На `team-28-00`:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 \
+  '~/apps/java/bin/java -version'
+```
+
+На `team-28-01`:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-01 \
+  '~/apps/java/bin/java -version'
 ```
 
 Установленная версия:
@@ -314,92 +451,193 @@ openjdk version "11.0.32.1"
 Temurin 11.0.32.1+1
 ```
 
-Версия Hadoop:
+Проверяем Hadoop на `team-28-nn`:
 
 ```bash
-~/apps/hadoop/bin/hadoop version
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'JAVA_HOME=$HOME/apps/java ~/apps/hadoop/bin/hadoop version | head -n 3'
 ```
 
-Результат:
+На `team-28-00`:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 \
+  'JAVA_HOME=$HOME/apps/java ~/apps/hadoop/bin/hadoop version | head -n 3'
+```
+
+На `team-28-01`:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-01 \
+  'JAVA_HOME=$HOME/apps/java ~/apps/hadoop/bin/hadoop version | head -n 3'
+```
+
+На всех трех узлах должна использоваться версия:
 
 ```text
 Hadoop 3.4.3
 ```
 
-Одинаковые версии Java и Hadoop были установлены на всех трех внутренних узлах. Это важно было проверить для распределённого кластера.
+После этого Java и Hadoop установлены одинаково на всех трех внутренних узлах.
 
 ## 5. Настройка переменных окружения
 
-После установки Java и Hadoop переменные окружения были настроены на всех трех внутренних узлах:
-
-- `team-28-nn`;
-- `team-28-00`;
-- `team-28-01`.
-
-В файл:
+После установки Java и Hadoop переменные окружения необходимо настроить на всех трех внутренних узлах:
 
 ```text
-~/.bashrc
+team-28-nn
+team-28-00
+team-28-01
 ```
 
-были добавлены следующие строки:
-
-```bash
-export JAVA_HOME=$HOME/apps/java
-export HADOOP_HOME=$HOME/apps/hadoop
-export PATH=$JAVA_HOME/bin:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$PATH
-```
-
-Для пользователя `team28a` переменные соответствуют следующим каталогам:
+Используются следующие значения:
 
 ```text
 JAVA_HOME=/home/team28a/apps/java
 HADOOP_HOME=/home/team28a/apps/hadoop
 ```
 
-`JAVA_HOME` указывает расположение установленной Java 11.
+### Настройка `team-28-nn`
 
-`HADOOP_HOME` указывает корневой каталог Hadoop.
+С edge-узла выполняем:
 
-Добавление каталогов `bin` и `sbin` Hadoop в `PATH` позволяет использовать команды Hadoop без указания полного пути к исполняемым файлам.
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn '
+cat >> ~/.bashrc <<'"'"'EOF'"'"'
+export JAVA_HOME=$HOME/apps/java
+export HADOOP_HOME=$HOME/apps/hadoop
+export PATH=$JAVA_HOME/bin:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$PATH
+EOF
+'
+```
 
-### Настройка Java для Hadoop
+Проверяем добавленные строки:
 
-На каждом из трех узлов также был изменен файл:
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'tail -n 5 ~/.bashrc'
+```
+
+Для Hadoop отдельно задаем путь к Java в файле:
 
 ```text
 ~/apps/hadoop/etc/hadoop/hadoop-env.sh
 ```
 
-В нем был указан путь к установленной Java:
+Команда:
 
 ```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  "echo 'export JAVA_HOME=\$HOME/apps/java' >> ~/apps/hadoop/etc/hadoop/hadoop-env.sh"
+```
+
+Проверяем:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'tail -n 1 ~/apps/hadoop/etc/hadoop/hadoop-env.sh'
+```
+
+Ожидаем:
+
+```text
 export JAVA_HOME=$HOME/apps/java
 ```
 
-Таким образом, все узлы используют Java из:
+### Настройка `team-28-00`
 
-```text
-/home/team28a/apps/java
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 '
+cat >> ~/.bashrc <<'"'"'EOF'"'"'
+export JAVA_HOME=$HOME/apps/java
+export HADOOP_HOME=$HOME/apps/hadoop
+export PATH=$JAVA_HOME/bin:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$PATH
+EOF
+'
 ```
 
-и Hadoop из:
+Проверяем `.bashrc`:
 
-```text
-/home/team28a/apps/hadoop
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 \
+  'tail -n 3 ~/.bashrc'
 ```
+
+Добавляем `JAVA_HOME` в `hadoop-env.sh`:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 \
+  "echo 'export JAVA_HOME=\$HOME/apps/java' >> ~/apps/hadoop/etc/hadoop/hadoop-env.sh"
+```
+
+Проверяем:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 \
+  'tail -n 1 ~/apps/hadoop/etc/hadoop/hadoop-env.sh'
+```
+
+### Настройка `team-28-01`
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-01 '
+cat >> ~/.bashrc <<'"'"'EOF'"'"'
+export JAVA_HOME=$HOME/apps/java
+export HADOOP_HOME=$HOME/apps/hadoop
+export PATH=$JAVA_HOME/bin:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$PATH
+EOF
+'
+```
+
+Проверяем `.bashrc`:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-01 \
+  'tail -n 3 ~/.bashrc'
+```
+
+Добавляем `JAVA_HOME` в `hadoop-env.sh`:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-01 \
+  "echo 'export JAVA_HOME=\$HOME/apps/java' >> ~/apps/hadoop/etc/hadoop/hadoop-env.sh"
+```
+
+Проверяем:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-01 \
+  'tail -n 1 ~/apps/hadoop/etc/hadoop/hadoop-env.sh'
+```
+
+После этого на всех трех узлах:
+
+- `JAVA_HOME` указывает на установленную Java 11;
+- `HADOOP_HOME` указывает на каталог Hadoop;
+- каталоги Hadoop `bin` и `sbin` добавлены в `PATH`;
+- Hadoop использует Java из `/home/team28a/apps/java`.
 
 ## 6. Настройка `core-site.xml`
 
-На всех трех внутренних узлах был настроен основной конфигурационный файл Hadoop:
+На всех трех внутренних узлах используется одинаковый файл:
 
 ```text
 ~/apps/hadoop/etc/hadoop/core-site.xml
 ```
 
-На `team-28-nn`, `team-28-00` и `team-28-01` использовалась одинаковая конфигурация:
+В нем задается адрес HDFS и NameNode:
 
-```xml
+```text
+hdfs://team-28-nn:9000
+```
+
+### `team-28-nn`
+
+С edge-узла выполняем:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn '
+cat > ~/apps/hadoop/etc/hadoop/core-site.xml <<'"'"'EOF'"'"'
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 
@@ -409,35 +647,110 @@ export JAVA_HOME=$HOME/apps/java
         <value>hdfs://team-28-nn:9000</value>
     </property>
 </configuration>
+EOF
+'
 ```
 
-Параметр `fs.defaultFS` задает адрес файловой системы HDFS и NameNode, к которому должны обращаться Hadoop-клиенты:
+Проверяем содержимое файла:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'cat ~/apps/hadoop/etc/hadoop/core-site.xml'
+```
+
+### `team-28-00`
+
+Записываем тот же конфигурационный файл:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 '
+cat > ~/apps/hadoop/etc/hadoop/core-site.xml <<'"'"'EOF'"'"'
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+    <property>
+        <name>fs.defaultFS</name>
+        <value>hdfs://team-28-nn:9000</value>
+    </property>
+</configuration>
+EOF
+'
+```
+
+Проверяем параметр:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 \
+  'grep -A1 fs.defaultFS ~/apps/hadoop/etc/hadoop/core-site.xml'
+```
+
+### `team-28-01`
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-01 '
+cat > ~/apps/hadoop/etc/hadoop/core-site.xml <<'"'"'EOF'"'"'
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+    <property>
+        <name>fs.defaultFS</name>
+        <value>hdfs://team-28-nn:9000</value>
+    </property>
+</configuration>
+EOF
+'
+```
+
+Проверяем параметр:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-01 \
+  'grep -A1 fs.defaultFS ~/apps/hadoop/etc/hadoop/core-site.xml'
+```
+
+Параметр:
+
+```text
+fs.defaultFS
+```
+
+задает адрес файловой системы HDFS, к которому обращаются Hadoop-клиенты.
+
+Для всех трех узлов используется один NameNode:
 
 ```text
 hdfs://team-28-nn:9000
 ```
 
-Здесь:
+где:
 
-- `hdfs://` — используется файловая система HDFS;
-- `team-28-nn` — hostname узла, на котором запускается NameNode;
+- `team-28-nn` — hostname узла NameNode;
 - `9000` — RPC-порт NameNode.
-
-Hostname `team-28-nn` используется вместо IP-адреса, так как на предыдущем этапе было проверено корректное разрешение имен внутренних узлов.
-
-Эта конфигурация была одинаково размещена на всех трех машинах, чтобы каждый узел обращался к одному и тому же NameNode.
 
 ## 7. Настройка `hdfs-site.xml`
 
-На всех трех внутренних узлах был настроен файл:
+На каждом внутреннем узле необходимо настроить файл:
 
 ```text
 ~/apps/hadoop/etc/hadoop/hdfs-site.xml
 ```
 
-Изначально использовалась следующая базовая конфигурация:
+Конфигурация отличается значением `dfs.datanode.hostname`, а на узле NameNode дополнительно задается `dfs.namenode.rpc-bind-host`.
 
-```xml
+## Конфигурация `team-28-nn`
+
+На `team-28-nn` работают:
+
+- NameNode;
+- DataNode #1.
+
+С edge-узла записываем итоговую конфигурацию:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn '
+cat > ~/apps/hadoop/etc/hadoop/hdfs-site.xml <<'"'"'EOF'"'"'
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
 
@@ -466,101 +779,257 @@ Hostname `team-28-nn` используется вместо IP-адреса, т�
         <name>dfs.namenode.secondary.http-address</name>
         <value>team-28-00:9868</value>
     </property>
+
+    <property>
+        <name>dfs.namenode.rpc-bind-host</name>
+        <value>0.0.0.0</value>
+    </property>
+
+    <property>
+        <name>dfs.client.use.datanode.hostname</name>
+        <value>true</value>
+    </property>
+
+    <property>
+        <name>dfs.datanode.use.datanode.hostname</name>
+        <value>true</value>
+    </property>
+
+    <property>
+        <name>dfs.datanode.hostname</name>
+        <value>team-28-nn</value>
+    </property>
 </configuration>
+EOF
+'
 ```
 
-### Репликация
+Проверяем файл:
 
-Параметр:
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'cat ~/apps/hadoop/etc/hadoop/hdfs-site.xml'
+```
+
+---
+
+## Конфигурация `team-28-00`
+
+На `team-28-00` работают:
+
+- SecondaryNameNode;
+- DataNode #2.
+
+Записываем конфигурацию:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 '
+cat > ~/apps/hadoop/etc/hadoop/hdfs-site.xml <<'"'"'EOF'"'"'
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+    <property>
+        <name>dfs.replication</name>
+        <value>3</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.name.dir</name>
+        <value>file:///home/team28a/hdfs/namenode</value>
+    </property>
+
+    <property>
+        <name>dfs.datanode.data.dir</name>
+        <value>file:///home/team28a/hdfs/datanode</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.checkpoint.dir</name>
+        <value>file:///home/team28a/hdfs/namesecondary</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.secondary.http-address</name>
+        <value>team-28-00:9868</value>
+    </property>
+
+    <property>
+        <name>dfs.client.use.datanode.hostname</name>
+        <value>true</value>
+    </property>
+
+    <property>
+        <name>dfs.datanode.use.datanode.hostname</name>
+        <value>true</value>
+    </property>
+
+    <property>
+        <name>dfs.datanode.hostname</name>
+        <value>team-28-00</value>
+    </property>
+</configuration>
+EOF
+'
+```
+
+Проверяем файл:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 \
+  'cat ~/apps/hadoop/etc/hadoop/hdfs-site.xml'
+```
+
+---
+
+## Конфигурация `team-28-01`
+
+На `team-28-01` работает:
+
+- DataNode #3.
+
+Записываем конфигурацию:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-01 '
+cat > ~/apps/hadoop/etc/hadoop/hdfs-site.xml <<'"'"'EOF'"'"'
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+    <property>
+        <name>dfs.replication</name>
+        <value>3</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.name.dir</name>
+        <value>file:///home/team28a/hdfs/namenode</value>
+    </property>
+
+    <property>
+        <name>dfs.datanode.data.dir</name>
+        <value>file:///home/team28a/hdfs/datanode</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.checkpoint.dir</name>
+        <value>file:///home/team28a/hdfs/namesecondary</value>
+    </property>
+
+    <property>
+        <name>dfs.namenode.secondary.http-address</name>
+        <value>team-28-00:9868</value>
+    </property>
+
+    <property>
+        <name>dfs.client.use.datanode.hostname</name>
+        <value>true</value>
+    </property>
+
+    <property>
+        <name>dfs.datanode.use.datanode.hostname</name>
+        <value>true</value>
+    </property>
+
+    <property>
+        <name>dfs.datanode.hostname</name>
+        <value>team-28-01</value>
+    </property>
+</configuration>
+EOF
+'
+```
+
+Проверяем файл:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-01 \
+  'cat ~/apps/hadoop/etc/hadoop/hdfs-site.xml'
+```
+
+### Основные параметры
 
 ```text
 dfs.replication = 3
 ```
 
-задает количество копий каждого блока HDFS.
-
-В нашем кластере используются три DataNode, поэтому каждый блок может храниться в трех репликах:
-
-```text
-team-28-nn  → DataNode #1
-team-28-00  → DataNode #2
-team-28-01  → DataNode #3
-```
-
-### Каталог NameNode
-
-NameNode хранит свои служебные данные в:
-
-```text
-/home/team28a/hdfs/namenode
-```
-
-Путь задается параметром:
+задает три реплики каждого блока HDFS.
 
 ```text
 dfs.namenode.name.dir
 ```
 
-### Каталог DataNode
-
-Данные каждого DataNode хранятся в:
+задает каталог служебных данных NameNode:
 
 ```text
-/home/team28a/hdfs/datanode
+/home/team28a/hdfs/namenode
 ```
-
-Путь задается параметром:
 
 ```text
 dfs.datanode.data.dir
 ```
 
-Одинаковый путь используется на всех трех виртуальных машинах, но на каждой машине это отдельный локальный каталог.
-
-### Каталог SecondaryNameNode
-
-Для checkpoint-данных SecondaryNameNode используется:
+задает каталог данных DataNode:
 
 ```text
-/home/team28a/hdfs/namesecondary
+/home/team28a/hdfs/datanode
 ```
-
-Путь задается параметром:
 
 ```text
 dfs.namenode.checkpoint.dir
 ```
 
-SecondaryNameNode был размещен на узле:
+задает каталог checkpoint SecondaryNameNode:
 
 ```text
-team-28-00
+/home/team28a/hdfs/namesecondary
 ```
 
-Его HTTP-адрес был задан параметром:
-
-```text
-dfs.namenode.secondary.http-address
-```
-
-со значением:
+SecondaryNameNode размещается на:
 
 ```text
 team-28-00:9868
 ```
 
-Таким образом, базовая конфигурация HDFS задает три реплики данных, локальные каталоги для NameNode, DataNode и SecondaryNameNode, а также размещение SecondaryNameNode на `team-28-00`.
+Параметр:
+
+```text
+dfs.namenode.rpc-bind-host = 0.0.0.0
+```
+
+на `team-28-nn` позволяет NameNode принимать RPC-соединения от других узлов кластера.
+
+Параметры:
+
+```text
+dfs.client.use.datanode.hostname = true
+dfs.datanode.use.datanode.hostname = true
+```
+
+задают использование hostname DataNode.
+
+На каждом узле также явно указан собственный hostname:
+
+```text
+team-28-nn  → dfs.datanode.hostname=team-28-nn
+team-28-00  → dfs.datanode.hostname=team-28-00
+team-28-01  → dfs.datanode.hostname=team-28-01
+```
 
 ## 8. Создание каталогов HDFS
 
-После настройки `hdfs-site.xml` на каждом узле были созданы локальные каталоги, используемые соответствующими HDFS-сервисами.
+После настройки `hdfs-site.xml` необходимо создать локальные каталоги, которые будут использоваться HDFS-сервисами.
+
+Все команды выполняются с edge-узла `team-28-en`.
 
 ### `team-28-nn`
 
-На узле `team-28-nn` впоследствии запускаются NameNode и DataNode, поэтому были созданы два каталога:
+На узле `team-28-nn` будут работать NameNode и DataNode, поэтому создаем два каталога:
 
 ```bash
-mkdir -p ~/hdfs/namenode ~/hdfs/datanode
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'mkdir -p ~/hdfs/namenode ~/hdfs/datanode'
 ```
 
 Получившиеся пути:
@@ -570,12 +1039,22 @@ mkdir -p ~/hdfs/namenode ~/hdfs/datanode
 /home/team28a/hdfs/datanode
 ```
 
-### `team-28-00`
-
-На узле `team-28-00` запускаются SecondaryNameNode и DataNode:
+Проверяем:
 
 ```bash
-mkdir -p ~/hdfs/namesecondary ~/hdfs/datanode
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'find ~/hdfs -maxdepth 1 -type d -print'
+```
+
+---
+
+### `team-28-00`
+
+На узле `team-28-00` будут работать SecondaryNameNode и DataNode:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 \
+  'mkdir -p ~/hdfs/namesecondary ~/hdfs/datanode'
 ```
 
 Получившиеся пути:
@@ -585,12 +1064,22 @@ mkdir -p ~/hdfs/namesecondary ~/hdfs/datanode
 /home/team28a/hdfs/datanode
 ```
 
-### `team-28-01`
-
-На узле `team-28-01` запускается DataNode:
+Проверяем:
 
 ```bash
-mkdir -p ~/hdfs/datanode
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 \
+  'find ~/hdfs -maxdepth 1 -type d -print'
+```
+
+---
+
+### `team-28-01`
+
+На узле `team-28-01` будет работать DataNode:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-01 \
+  'mkdir -p ~/hdfs/datanode'
 ```
 
 Получившийся путь:
@@ -599,7 +1088,14 @@ mkdir -p ~/hdfs/datanode
 /home/team28a/hdfs/datanode
 ```
 
-В результате локальные каталоги соответствуют ролям узлов и путям, ранее указанным в `hdfs-site.xml`:
+Проверяем:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-01 \
+  'find ~/hdfs -maxdepth 1 -type d -print'
+```
+
+В результате структура локальных каталогов соответствует ролям узлов:
 
 ```text
 team-28-nn
@@ -616,9 +1112,9 @@ team-28-01
 
 ## 9. Первичная инициализация NameNode
 
-После создания локальных каталогов был инициализирован NameNode.
+После создания локальных каталогов необходимо инициализировать NameNode.
 
-Команда выполнялась на узле:
+Форматирование выполняется только на узле:
 
 ```text
 team-28-nn
@@ -626,102 +1122,79 @@ team-28-nn
 
 под пользователем `team28a`.
 
-Форматирование NameNode:
+С edge-узла выполняем:
 
 ```bash
-JAVA_HOME=$HOME/apps/java \
-~/apps/hadoop/bin/hdfs namenode -format
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'JAVA_HOME=$HOME/apps/java ~/apps/hadoop/bin/hdfs namenode -format'
 ```
 
-Команда инициализирует metadata HDFS в каталоге, указанном ранее в `hdfs-site.xml`:
+Команда инициализирует metadata HDFS в каталоге, заданном параметром:
+
+```text
+dfs.namenode.name.dir
+```
+
+то есть:
 
 ```text
 /home/team28a/hdfs/namenode
 ```
 
-Форматирование завершилось успешно. Hadoop создал служебные данные NameNode и идентификатор block pool.
+При успешном форматировании Hadoop создает служебные данные NameNode и идентификатор block pool.
 
-В нашем случае был создан:
+В данном кластере был создан:
 
 ```text
 BP-1831671716-127.0.1.1-1790879527043
 ```
 
-Важно: `hdfs namenode -format` выполнялся только один раз — перед первым запуском HDFS-кластера.
+> **Важно:** команду `hdfs namenode -format` необходимо выполнять только один раз — перед первым запуском нового HDFS-кластера.
 
-После появления рабочего namespace NameNode повторное форматирование не выполнялось. Для дальнейших остановок и запусков сервиса использовались команды управления daemon-процессом, а не повторный `format`.
+После создания рабочего namespace повторное форматирование NameNode выполнять не нужно. Для последующих запусков и остановок используются команды управления daemon-процессом.
 
-## 10. Первый запуск NameNode и настройка RPC-доступа
+## 10. Запуск NameNode и проверка RPC-доступа
 
-После однократного форматирования NameNode был впервые запущен на узле:
+После однократного форматирования запускаем NameNode на узле:
 
 ```text
 team-28-nn
 ```
 
-Команда запуска:
+Все команды выполняются с edge-узла `team-28-en`.
+
+### Запуск NameNode
 
 ```bash
-JAVA_HOME=$HOME/apps/java \
-~/apps/hadoop/bin/hdfs --daemon start namenode
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'JAVA_HOME=$HOME/apps/java ~/apps/hadoop/bin/hdfs --daemon start namenode'
 ```
 
-После запуска процесс NameNode успешно появился в списке Java-процессов.
+### Проверка процесса
 
-Однако при проверке сетевых портов было обнаружено, что RPC-интерфейс NameNode слушает только локальный адрес:
-
-```text
-127.0.1.1:9000
-```
-
-При этом Web UI NameNode был доступен на:
-
-```text
-0.0.0.0:9870
-```
-
-RPC-порт `9000` должен быть доступен другим узлам HDFS-кластера, поэтому привязка к loopback-адресу `127.0.1.1` не подходила.
-
-Ранее при проверке hostname было обнаружено, что собственное имя виртуальной машины может разрешаться через `127.0.1.1`. Для явной привязки RPC-интерфейса ко всем сетевым интерфейсам конфигурация NameNode была изменена.
-
-Сначала NameNode был остановлен:
+Проверяем список Java-процессов:
 
 ```bash
-JAVA_HOME=$HOME/apps/java \
-~/apps/hadoop/bin/hdfs --daemon stop namenode
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'JAVA_HOME=$HOME/apps/java ~/apps/java/bin/jps'
 ```
 
-На узле `team-28-nn` в файл:
+В выводе должен присутствовать процесс:
 
 ```text
-~/apps/hadoop/etc/hadoop/hdfs-site.xml
+NameNode
 ```
 
-был добавлен параметр:
+### Проверка сетевых портов
 
-```xml
-<property>
-    <name>dfs.namenode.rpc-bind-host</name>
-    <value>0.0.0.0</value>
-</property>
-```
-
-Значение `0.0.0.0` используется как bind-address и означает, что NameNode принимает RPC-соединения на всех сетевых интерфейсах машины.
-
-При этом адрес HDFS для клиентов не изменился и по-прежнему задается в `core-site.xml`:
-
-```text
-hdfs://team-28-nn:9000
-```
-
-После изменения конфигурации NameNode был снова запущен:
+Проверяем RPC-порт и Web UI NameNode:
 
 ```bash
-JAVA_HOME=$HOME/apps/java \
-~/apps/hadoop/bin/hdfs --daemon start namenode
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'ss -ltn | grep -E ":9000|:9870"'
 ```
 
-После перезапуска NameNode слушал:
+Ожидается, что NameNode слушает:
 
 ```text
 0.0.0.0:9000
@@ -731,202 +1204,189 @@ JAVA_HOME=$HOME/apps/java \
 где:
 
 ```text
-9000 — RPC NameNode
+9000 — RPC-интерфейс NameNode
 9870 — Web UI NameNode
 ```
 
-После этого доступность RPC-порта `team-28-nn:9000` была проверена с узлов `team-28-00` и `team-28-01`.
+RPC-интерфейс доступен на всех сетевых интерфейсах благодаря параметру, настроенному ранее в `hdfs-site.xml`:
 
-На обоих узлах проверка завершилась результатом:
+```text
+dfs.namenode.rpc-bind-host=0.0.0.0
+```
+
+При этом Hadoop-клиенты обращаются к NameNode по адресу:
+
+```text
+hdfs://team-28-nn:9000
+```
+
+### Проверка RPC-доступа с других узлов
+
+Проверяем доступность RPC-порта NameNode с `team-28-00`:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 \
+  'timeout 3 bash -c "</dev/tcp/team-28-nn/9000" && echo NAMENODE_REACHABLE || echo NAMENODE_NOT_REACHABLE'
+```
+
+Ожидаемый результат:
 
 ```text
 NAMENODE_REACHABLE
 ```
 
-Таким образом, NameNode стал доступен всем внутренним узлам кластера через `team-28-nn:9000`.
+Проверяем доступность с `team-28-01`:
 
-## 11. Запуск первого DataNode и настройка hostname
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-01 \
+  'timeout 3 bash -c "</dev/tcp/team-28-nn/9000" && echo NAMENODE_REACHABLE || echo NAMENODE_NOT_REACHABLE'
+```
 
-Первый DataNode был запущен на том же узле, где работает NameNode:
+Ожидаемый результат:
+
+```text
+NAMENODE_REACHABLE
+```
+
+После успешной проверки NameNode доступен всем внутренним узлам кластера по адресу:
+
+```text
+team-28-nn:9000
+```
+
+## 11. Запуск первого DataNode
+
+Первый DataNode запускается на том же узле, где работает NameNode:
 
 ```text
 team-28-nn
 ```
 
-Команда запуска:
+Настройки hostname DataNode уже заданы ранее в `hdfs-site.xml`:
 
-```bash
-JAVA_HOME=$HOME/apps/java \
-~/apps/hadoop/bin/hdfs --daemon start datanode
+```text
+dfs.client.use.datanode.hostname=true
+dfs.datanode.use.datanode.hostname=true
+dfs.datanode.hostname=team-28-nn
 ```
 
-После запуска на `team-28-nn` одновременно работали два HDFS-сервиса:
+Все команды выполняются с edge-узла `team-28-en`.
+
+### Запуск DataNode
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'JAVA_HOME=$HOME/apps/java ~/apps/hadoop/bin/hdfs --daemon start datanode'
+```
+
+### Проверка процесса
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'JAVA_HOME=$HOME/apps/java ~/apps/java/bin/jps'
+```
+
+После запуска на `team-28-nn` должны одновременно присутствовать процессы:
 
 ```text
 NameNode
 DataNode
 ```
 
-При первоначальной проверке первый DataNode отображался с локальным адресом:
+### Проверка доступности DataNode
 
-```text
-127.0.0.1:9866
-```
-
-Так как кластер состоит из нескольких виртуальных машин, для обмена между узлами было настроено использование hostname DataNode.
-
-На всех трех узлах в `hdfs-site.xml` были добавлены параметры:
-
-```xml
-<property>
-    <name>dfs.client.use.datanode.hostname</name>
-    <value>true</value>
-</property>
-
-<property>
-    <name>dfs.datanode.use.datanode.hostname</name>
-    <value>true</value>
-</property>
-```
-
-Также на каждом узле был явно указан его hostname.
-
-На `team-28-nn`:
-
-```xml
-<property>
-    <name>dfs.datanode.hostname</name>
-    <value>team-28-nn</value>
-</property>
-```
-
-На `team-28-00`:
-
-```xml
-<property>
-    <name>dfs.datanode.hostname</name>
-    <value>team-28-00</value>
-</property>
-```
-
-На `team-28-01`:
-
-```xml
-<property>
-    <name>dfs.datanode.hostname</name>
-    <value>team-28-01</value>
-</property>
-```
-
-После изменения конфигурации DataNode на `team-28-nn` был перезапущен:
+Проверяем доступность transfer-порта DataNode с другого узла кластера — `team-28-00`:
 
 ```bash
-JAVA_HOME=$HOME/apps/java \
-~/apps/hadoop/bin/hdfs --daemon stop datanode
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 \
+  'timeout 3 bash -c "</dev/tcp/team-28-nn/9866" && echo DATANODE_REACHABLE || echo DATANODE_NOT_REACHABLE'
 ```
 
-```bash
-JAVA_HOME=$HOME/apps/java \
-~/apps/hadoop/bin/hdfs --daemon start datanode
-```
-
-В информации о DataNode hostname стал определяться как:
-
-```text
-team-28-nn
-```
-
-При этом в одном из полей отчета адрес первого DataNode продолжал отображаться как `127.0.0.1:9866`.
-
-Поэтому доступность DataNode была дополнительно проверена с другого узла кластера — `team-28-00`:
-
-```bash
-timeout 3 bash -c "</dev/tcp/team-28-nn/9866" \
-&& echo DATANODE_REACHABLE \
-|| echo DATANODE_NOT_REACHABLE
-```
-
-Результат:
+Ожидаемый результат:
 
 ```text
 DATANODE_REACHABLE
 ```
 
-Таким образом, DataNode на `team-28-nn` был реально доступен другим машинам кластера через hostname `team-28-nn` и transfer-порт `9866`.
+Это подтверждает, что DataNode на `team-28-nn` доступен другим узлам кластера по hostname:
+
+```text
+team-28-nn
+```
+
+и transfer-порту:
+
+```text
+9866
+```
 
 ## 12. Запуск второго и третьего DataNode
 
-После настройки первого DataNode были последовательно запущены DataNode на двух оставшихся внутренних узлах.
-
-### DataNode на `team-28-00`
-
-На узле `team-28-00` был запущен второй DataNode:
-
-```bash
-JAVA_HOME=$HOME/apps/java \
-~/apps/hadoop/bin/hdfs --daemon start datanode
-```
-
-Наличие процесса было проверено с помощью:
-
-```bash
-jps
-```
-
-После запуска состояние HDFS было проверено командой:
-
-```bash
-JAVA_HOME=$HOME/apps/java \
-~/apps/hadoop/bin/hdfs dfsadmin -report
-```
-
-NameNode отображал:
-
-```text
-Live datanodes (2)
-```
-
-DataNode на `team-28-00` зарегистрировался с адресом:
-
-```text
-10.28.0.12:9866
-```
-
-и hostname:
+После запуска первого DataNode необходимо запустить DataNode на двух оставшихся внутренних узлах:
 
 ```text
 team-28-00
+team-28-01
 ```
 
-### DataNode на `team-28-01`
+Все команды выполняются с edge-узла `team-28-en`.
 
-На третьем узле был запущен еще один DataNode:
+### Запуск DataNode #2 на `team-28-00`
 
 ```bash
-JAVA_HOME=$HOME/apps/java \
-~/apps/hadoop/bin/hdfs --daemon start datanode
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 \
+  'JAVA_HOME=$HOME/apps/java ~/apps/hadoop/bin/hdfs --daemon start datanode'
 ```
 
-После запуска наличие процесса также было проверено через:
+Проверяем наличие процесса:
 
 ```bash
-jps
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 \
+  'JAVA_HOME=$HOME/apps/java ~/apps/java/bin/jps'
 ```
 
-Повторная проверка состояния кластера:
+В выводе должен присутствовать:
+
+```text
+DataNode
+```
+
+### Запуск DataNode #3 на `team-28-01`
 
 ```bash
-JAVA_HOME=$HOME/apps/java \
-~/apps/hadoop/bin/hdfs dfsadmin -report
+ssh -i ~/.ssh/team28a_internal team28a@team-28-01 \
+  'JAVA_HOME=$HOME/apps/java ~/apps/hadoop/bin/hdfs --daemon start datanode'
 ```
 
-показала:
+Проверяем наличие процесса:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-01 \
+  'JAVA_HOME=$HOME/apps/java ~/apps/java/bin/jps'
+```
+
+В выводе должен присутствовать:
+
+```text
+DataNode
+```
+
+### Проверка всех трех DataNode
+
+После запуска всех трех DataNode проверяем состояние кластера через NameNode:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'JAVA_HOME=$HOME/apps/java ~/apps/hadoop/bin/hdfs dfsadmin -report | grep -E "Live datanodes|Dead datanodes|Name:|Hostname:"'
+```
+
+Ожидаемый результат:
 
 ```text
 Live datanodes (3)
 ```
 
-Таким образом, NameNode видел все три DataNode:
+NameNode должен видеть три DataNode:
 
 ```text
 team-28-nn
@@ -934,7 +1394,7 @@ team-28-00
 team-28-01
 ```
 
-В отчете узлы отображались следующим образом:
+В рабочем кластере узлы отображались следующим образом:
 
 ```text
 10.28.0.12:9866   hostname: team-28-00
@@ -942,19 +1402,27 @@ team-28-01
 127.0.0.1:9866    hostname: team-28-nn
 ```
 
-Для первого DataNode поле адреса продолжало отображаться через loopback, однако его доступность по `team-28-nn:9866` ранее была успешно проверена с другого узла.
+Для DataNode на `team-28-nn` поле адреса может отображаться через loopback-адрес `127.0.0.1:9866`.
 
-Позже корректная работа этого DataNode была дополнительно подтверждена фактической репликацией HDFS на все три узла.
+При этом его доступность по адресу:
+
+```text
+team-28-nn:9866
+```
+
+уже была проверена с другого узла в предыдущем разделе.
+
+После запуска этого этапа NameNode видит все три DataNode кластера.
 
 ## 13. Запуск SecondaryNameNode
 
-SecondaryNameNode был запущен на узле:
+SecondaryNameNode запускается на узле:
 
 ```text
 team-28-00
 ```
 
-На этой машине уже работал DataNode, поэтому итоговое распределение сервисов на узле стало следующим:
+На этом же узле уже работает второй DataNode, поэтому итоговое распределение сервисов будет следующим:
 
 ```text
 team-28-00
@@ -962,77 +1430,69 @@ team-28-00
 └── SecondaryNameNode
 ```
 
-SecondaryNameNode был запущен командой:
+Все команды выполняются с edge-узла `team-28-en`.
+
+### Запуск SecondaryNameNode
 
 ```bash
-JAVA_HOME=$HOME/apps/java \
-~/apps/hadoop/bin/hdfs --daemon start secondarynamenode
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 \
+  'JAVA_HOME=$HOME/apps/java ~/apps/hadoop/bin/hdfs --daemon start secondarynamenode'
 ```
 
-После запуска наличие процесса было проверено:
+### Проверка процесса
+
+Проверяем список Java-процессов:
 
 ```bash
-jps
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 \
+  'JAVA_HOME=$HOME/apps/java ~/apps/java/bin/jps'
 ```
 
-На `team-28-00` присутствовали:
+В выводе должны присутствовать:
 
 ```text
 DataNode
 SecondaryNameNode
 ```
 
-### Проверка HTTP-порта
+### Проверка HTTP-порта SecondaryNameNode
 
-В `hdfs-site.xml` ранее был задан адрес SecondaryNameNode:
-
-```xml
-<property>
-    <name>dfs.namenode.secondary.http-address</name>
-    <value>team-28-00:9868</value>
-</property>
-```
-
-После запуска порт был проверен командой:
+Проверяем порт `9868`:
 
 ```bash
-ss -ltn | grep :9868
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 \
+  'ss -ltn | grep :9868'
 ```
 
-Фактически сервис слушал:
+В используемой инфраструктуре SecondaryNameNode слушал локальный адрес:
 
 ```text
 127.0.1.1:9868
 ```
 
-Дополнительная перенастройка HTTP-интерфейса SecondaryNameNode не выполнялась, так как для проверки задания Web UI SecondaryNameNode не требовался, а сам процесс работал корректно.
+Дополнительная настройка bind-адреса для SecondaryNameNode не выполнялась.
 
-Работа механизма checkpoint позже также подтверждалась актуальным значением `Last Checkpoint Time` в Web UI NameNode.
-
-Checkpoint-данные SecondaryNameNode хранятся в каталоге:
+Работа checkpoint далее дополнительно подтверждается через параметр:
 
 ```text
-/home/team28a/hdfs/namesecondary
+Last Checkpoint Time
 ```
 
-SecondaryNameNode используется для создания checkpoint metadata HDFS и не является резервным NameNode.
+в Web UI NameNode.
 
 ## 14. Функциональная проверка HDFS
 
-После запуска всех необходимых HDFS-сервисов была выполнена практическая проверка записи и чтения данных.
+После запуска всех необходимых HDFS-сервисов выполняем практическую проверку записи и чтения данных.
 
-Проверка выполнялась с узла:
-
-```text
-team-28-nn
-```
+Все команды выполняются с edge-узла `team-28-en`, а сами операции HDFS запускаются на `team-28-nn`.
 
 ### Создание тестового файла
 
-Сначала в локальной файловой системе Linux был создан тестовый файл:
+Создаем локальный тестовый файл на `team-28-nn`:
 
 ```bash
-echo "Hello HDFS from team28a" > ~/hdfs-test.txt
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'echo "Hello HDFS from team28a" > ~/hdfs-test.txt'
 ```
 
 Локальный путь файла:
@@ -1041,14 +1501,15 @@ echo "Hello HDFS from team28a" > ~/hdfs-test.txt
 /home/team28a/hdfs-test.txt
 ```
 
-На этом этапе файл еще не находился в HDFS.
+На этом этапе файл находится только в локальной файловой системе Linux.
 
 ### Создание каталога в HDFS
 
-В HDFS был создан отдельный каталог нашей команды:
+Создаем каталог команды в HDFS:
 
 ```bash
-hdfs dfs -mkdir -p /team28a
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'JAVA_HOME=$HOME/apps/java ~/apps/hadoop/bin/hdfs dfs -mkdir -p /team28a'
 ```
 
 Путь:
@@ -1057,83 +1518,95 @@ hdfs dfs -mkdir -p /team28a
 /team28a
 ```
 
-относится уже к HDFS namespace, а не к локальной файловой системе Linux.
+относится к HDFS namespace.
 
-### Загрузка файла
+### Загрузка файла в HDFS
 
-Локальный тестовый файл был загружен в HDFS:
-
-```bash
-hdfs dfs -put -f ~/hdfs-test.txt /team28a/
-```
-
-После этого содержимое каталога было проверено:
+Загружаем локальный файл:
 
 ```bash
-hdfs dfs -ls /team28a
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'JAVA_HOME=$HOME/apps/java ~/apps/hadoop/bin/hdfs dfs -put -f ~/hdfs-test.txt /team28a/'
 ```
 
-В HDFS появился файл:
+### Проверка файла в HDFS
+
+Проверяем содержимое каталога:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'JAVA_HOME=$HOME/apps/java ~/apps/hadoop/bin/hdfs dfs -ls /team28a'
+```
+
+В выводе должен присутствовать файл:
 
 ```text
 /team28a/hdfs-test.txt
 ```
 
-В выводе присутствовала строка вида:
+В рабочем кластере строка имела вид:
 
 ```text
 -rw-r--r--   3 team28a supergroup 24 ... /team28a/hdfs-test.txt
 ```
 
-Число `3` указывает replication factor файла.
+Число:
+
+```text
+3
+```
+
+указывает replication factor файла.
 
 ### Проверка чтения
 
-Содержимое загруженного файла было прочитано непосредственно из HDFS:
+Читаем файл непосредственно из HDFS:
 
 ```bash
-hdfs dfs -cat /team28a/hdfs-test.txt
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'JAVA_HOME=$HOME/apps/java ~/apps/hadoop/bin/hdfs dfs -cat /team28a/hdfs-test.txt'
 ```
 
-Результат:
+Ожидаемый результат:
 
 ```text
 Hello HDFS from team28a
 ```
 
-Таким образом, кластер успешно выполнил полный цикл записи и чтения данных через HDFS.
+Таким образом, HDFS успешно выполняет запись и чтение данных.
 
 ## 15. Проверка целостности и репликации через `fsck`
 
-После успешной записи и чтения тестового файла была выполнена проверка его состояния в HDFS.
+После успешной записи и чтения тестового файла необходимо проверить его состояние и фактическую репликацию в HDFS.
 
-Команда:
+Проверка выполняется с edge-узла `team-28-en` через NameNode:
 
 ```bash
-hdfs fsck /team28a/hdfs-test.txt -files -blocks -locations
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'JAVA_HOME=$HOME/apps/java ~/apps/hadoop/bin/hdfs fsck /team28a/hdfs-test.txt -files -blocks -locations'
 ```
 
-Проверялся файл:
+Проверяется файл:
 
 ```text
 /team28a/hdfs-test.txt
 ```
 
-В результате HDFS сообщил:
+Для рабочего кластера HDFS должен сообщить:
 
 ```text
 /team28a/hdfs-test.txt 24 bytes, replicated: replication=3, 1 block(s): OK
 ```
 
-Для блока было зафиксировано:
+Для блока должно быть:
 
 ```text
 Live_repl=3
 ```
 
-То есть HDFS видел три живые реплики блока.
+Это означает, что HDFS видит три живые реплики блока.
 
-Реплики находились на трех DataNode:
+В рабочем кластере реплики находились на трех DataNode:
 
 ```text
 10.28.0.12:9866
@@ -1141,9 +1614,15 @@ Live_repl=3
 127.0.0.1:9866
 ```
 
-Первый DataNode продолжал отображаться в данном поле через loopback-адрес, однако наличие трех живых реплик подтверждает, что все три DataNode реально участвовали в хранении данных.
+Первый DataNode в поле адреса отображался через loopback-адрес, однако наличие:
 
-Итоговая проверка показала:
+```text
+Live_repl=3
+```
+
+подтверждает, что все три DataNode участвуют в хранении данных.
+
+Итоговая проверка должна показывать:
 
 ```text
 Status: HEALTHY
@@ -1156,57 +1635,65 @@ Corrupt blocks: 0
 Missing replicas: 0
 ```
 
-Таким образом:
+Таким образом, проверка `fsck` подтверждает:
 
-- кластер содержит три DataNode;
+- в кластере участвуют три DataNode;
 - replication factor равен `3`;
-- все три реплики блока доступны;
-- отсутствуют потерянные, поврежденные и недореплицированные блоки;
-- проверяемый путь HDFS имеет статус `HEALTHY`.
+- для тестового блока существуют три живые реплики;
+- отсутствуют потерянные блоки;
+- отсутствуют поврежденные блоки;
+- отсутствуют недостающие реплики;
+- проверяемый файл имеет статус `HEALTHY`.
 
+  
 ## 16. Финальная проверка процессов
 
-После запуска всех сервисов была выполнена проверка Java-процессов на каждом узле.
+После запуска всех HDFS-сервисов необходимо проверить Java-процессы на каждом внутреннем узле.
 
-На `team-28-nn`:
+Все команды выполняются с edge-узла `team-28-en`.
+
+### `team-28-nn`
 
 ```bash
-jps
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'JAVA_HOME=$HOME/apps/java ~/apps/java/bin/jps'
 ```
 
-Результат:
+В выводе должны присутствовать:
 
 ```text
 NameNode
 DataNode
 ```
 
-На `team-28-00`:
+### `team-28-00`
 
 ```bash
-jps
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 \
+  'JAVA_HOME=$HOME/apps/java ~/apps/java/bin/jps'
 ```
 
-Результат:
+В выводе должны присутствовать:
 
 ```text
 DataNode
 SecondaryNameNode
 ```
 
-На `team-28-01`:
+### `team-28-01`
 
 ```bash
-jps
+ssh -i ~/.ssh/team28a_internal team28a@team-28-01 \
+  'JAVA_HOME=$HOME/apps/java ~/apps/java/bin/jps'
 ```
 
-Результат:
+В выводе должен присутствовать:
 
 ```text
 DataNode
 ```
 
-Итоговое распределение сервисов:
+Итоговое распределение HDFS-сервисов:
 
 ```text
 team-28-nn
@@ -1223,60 +1710,74 @@ team-28-01
 
 Таким образом, в кластере работают:
 
-- 1 NameNode;
-- 1 SecondaryNameNode;
-- 3 DataNode.
+```text
+1 NameNode
+1 SecondaryNameNode
+3 DataNode
+```
 
 ## 17. Проверка логов Hadoop
 
-В качестве дополнительной проверки состояния кластера были просмотрены логи Hadoop на всех трех внутренних узлах.
+После запуска и проверки всех сервисов необходимо просмотреть логи Hadoop на трех внутренних узлах и убедиться в отсутствии критических ошибок.
 
-Логи располагаются в каталоге:
+Логи Hadoop находятся в каталоге:
 
 ```text
 ~/apps/hadoop/logs/
 ```
 
-Для поиска критических сообщений использовалась команда:
+Все команды выполняются с edge-узла `team-28-en`.
+
+### Проверка `team-28-nn`
 
 ```bash
-grep -RniE "FATAL|ERROR" \
-~/apps/hadoop/logs/*.log \
-2>/dev/null | tail -n 20 || true
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'grep -RniE "FATAL|ERROR" ~/apps/hadoop/logs/*.log 2>/dev/null | tail -n 20 || true'
 ```
 
-На узлах:
-
-```text
-team-28-00
-team-28-01
-```
-
-команда не вывела сообщений уровней `ERROR` или `FATAL`.
-
-На `team-28-nn` были найдены только сообщения:
+В рабочем кластере на этом узле встречались сообщения, связанные с:
 
 ```text
 RECEIVED SIGNAL 15: SIGTERM
 ```
 
-Эти записи соответствуют штатным остановкам и перезапускам NameNode и DataNode, выполненным во время настройки кластера.
+Они появились из-за штатных остановок и перезапусков HDFS-процессов, выполнявшихся во время первоначальной настройки кластера.
 
-Например, сервисы останавливались командами:
+Критических ошибок работающего кластера обнаружено не было.
 
-```bash
-hdfs --daemon stop namenode
-```
+### Проверка `team-28-00`
 
 ```bash
-hdfs --daemon stop datanode
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 \
+  'grep -RniE "FATAL|ERROR" ~/apps/hadoop/logs/*.log 2>/dev/null | tail -n 20 || true'
 ```
 
-Критических ошибок в логах работающего кластера обнаружено не было.
+В рабочем состоянии команда не вывела сообщений уровней:
+
+```text
+ERROR
+FATAL
+```
+
+### Проверка `team-28-01`
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-01 \
+  'grep -RniE "FATAL|ERROR" ~/apps/hadoop/logs/*.log 2>/dev/null | tail -n 20 || true'
+```
+
+В рабочем состоянии команда также не вывела сообщений уровней:
+
+```text
+ERROR
+FATAL
+```
+
+Таким образом, после запуска кластера критических ошибок Hadoop в логах трех внутренних узлов обнаружено не было.
 
 ## 18. Проверка кластера через NameNode Web UI
 
-Для финальной проверки состояния кластера был открыт Web UI NameNode.
+После запуска всех HDFS-сервисов выполняем финальную проверку состояния кластера через Web UI NameNode.
 
 NameNode работает на узле:
 
@@ -1284,27 +1785,31 @@ NameNode работает на узле:
 team-28-nn
 ```
 
-и использует Web UI на порту:
+Web UI NameNode использует порт:
 
 ```text
 9870
 ```
 
-Так как `team-28-nn` находится во внутренней сети, доступ к Web UI с локального компьютера был организован через SSH-туннель через edge-узел:
+Так как `team-28-nn` находится во внутренней сети, доступ к интерфейсу с локального компьютера выполняется через SSH-туннель через edge-узел.
+
+### Создание SSH-туннеля
+
+На локальном компьютере выполняем:
 
 ```bash
 ssh -N -L 9870:team-28-nn:9870 team28a@2.59.83.133
 ```
 
-После создания туннеля интерфейс NameNode был открыт в браузере:
+После создания туннеля открываем в браузере:
 
 ```text
 http://localhost:9870
 ```
 
-### Активный NameNode
+### Проверка активного NameNode
 
-В интерфейсе отображался активный NameNode:
+В Web UI должен отображаться активный NameNode:
 
 ```text
 team-28-nn:9000 (active)
@@ -1312,11 +1817,17 @@ team-28-nn:9000 (active)
 
 ![Active NameNode](images/namenode-active.jpg)
 
-Это подтверждает, что NameNode запущен на `team-28-nn` и работает с RPC-адресом `team-28-nn:9000`.
+Это подтверждает, что NameNode запущен на `team-28-nn` и работает с RPC-адресом:
 
-### Состояние DataNode
+```text
+team-28-nn:9000
+```
 
-В разделе Summary интерфейса NameNode были получены следующие показатели:
+### Проверка состояния DataNode
+
+В разделе Summary проверяем показатели состояния кластера.
+
+В рабочем кластере были получены:
 
 ```text
 Live Nodes: 3
@@ -1327,20 +1838,26 @@ Number of Under-Replicated Blocks: 0
 
 ![Cluster health](images/cluster-health.jpg)
 
-Таким образом:
+Эти показатели подтверждают, что:
 
 - все три DataNode находятся в состоянии `Live`;
 - отсутствуют `Dead Nodes`;
 - отсутствуют ошибки томов DataNode;
 - отсутствуют недореплицированные блоки.
 
-В интерфейсе также отображалось актуальное значение `Last Checkpoint Time`, что дополнительно подтверждает работу механизма checkpoint после запуска SecondaryNameNode.
+Также в интерфейсе отображается значение:
 
-По результатам проверки через Web UI кластер находится в работоспособном состоянии и соответствует требованию задания о наличии трех работающих DataNode без деградировавших узлов.
+```text
+Last Checkpoint Time
+```
+
+что позволяет проверить наличие актуального checkpoint после запуска SecondaryNameNode.
+
+Таким образом, через NameNode Web UI подтверждается работоспособное состояние HDFS-кластера с тремя работающими DataNode.
 
 ## 19. Итог
 
-В результате ручного развертывания был получен работоспособный HDFS-кластер следующей архитектуры:
+В результате ручного развертывания был получен HDFS-кластер следующей архитектуры:
 
 ```text
 team-28-nn
@@ -1361,51 +1878,43 @@ team-28-01
 - 1 SecondaryNameNode;
 - 3 DataNode.
 
-Для HDFS был установлен replication factor:
+Для HDFS установлен replication factor:
 
 ```text
 3
 ```
 
-Работоспособность кластера была подтверждена несколькими проверками.
+Работоспособность кластера была подтверждена несколькими независимыми проверками.
 
-### Состояние DataNode
+### DataNode
 
-Команда:
-
-```bash
-hdfs dfsadmin -report
-```
-
-показала:
+NameNode видит:
 
 ```text
 Live datanodes (3)
 ```
 
-### Проверка записи и чтения
+Все три DataNode зарегистрированы и участвуют в работе HDFS.
 
-Тестовый файл был успешно загружен в HDFS и прочитан обратно:
+### Запись и чтение данных
+
+Тестовый файл:
 
 ```text
 /team28a/hdfs-test.txt
 ```
 
-Содержимое:
+был успешно записан в HDFS и прочитан обратно.
+
+Содержимое файла:
 
 ```text
 Hello HDFS from team28a
 ```
 
-### Проверка целостности
+### Целостность и репликация
 
-Команда:
-
-```bash
-hdfs fsck /team28a/hdfs-test.txt -files -blocks -locations
-```
-
-показала:
+Проверка `fsck` показала:
 
 ```text
 Status: HEALTHY
@@ -1417,17 +1926,19 @@ Corrupt blocks: 0
 Missing replicas: 0
 ```
 
-### Проверка логов
+Таким образом, тестовый файл имеет три живые реплики и не содержит потерянных или поврежденных блоков.
 
-На узлах `team-28-00` и `team-28-01` сообщений уровней `ERROR` и `FATAL` обнаружено не было.
+### Логи Hadoop
 
-На `team-28-nn` присутствовали только записи `SIGTERM`, соответствующие штатным остановкам и перезапускам сервисов во время настройки.
+На `team-28-00` и `team-28-01` сообщений уровней `ERROR` и `FATAL` обнаружено не было.
+
+На `team-28-nn` присутствовали только записи, связанные с `SIGTERM` во время штатных остановок и перезапусков сервисов в процессе первоначальной настройки.
 
 Критических ошибок работающего кластера обнаружено не было.
 
-### Проверка через NameNode Web UI
+### NameNode Web UI
 
-В Web UI NameNode были зафиксированы следующие показатели:
+В Web UI NameNode были получены следующие показатели:
 
 ```text
 Live Nodes: 3
@@ -1436,6 +1947,6 @@ Total Datanode Volume Failures: 0
 Number of Under-Replicated Blocks: 0
 ```
 
-Таким образом, все три DataNode находятся в рабочем состоянии, потерянные или недореплицированные блоки отсутствуют, а HDFS-кластер имеет статус `HEALTHY`.
+Таким образом, все три DataNode находятся в рабочем состоянии, отсутствуют `Dead Nodes`, ошибки томов и недореплицированные блоки.
 
 Развертывание выполнялось вручную под пользователем `team28a`. Автоматизированные скрипты в рамках данной работы не использовались.
