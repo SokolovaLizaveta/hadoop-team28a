@@ -44,8 +44,8 @@ team-28-01
 10. [Финальная проверка процессов](#10-финальная-проверка-процессов)
 11. [Проверка логов Hadoop](#11-проверка-логов-hadoop)
 12. [Публикация и проверка Web UI](#12-публикация-и-проверка-web-ui)
-13. [Структура файлов домашнего задания](#14-структура-файлов-домашнего-задания)
-14. [Итог](#15-итог)
+13. [Структура файлов домашнего задания](#13-структура-файлов-домашнего-задания)
+14. [Итог](#14-итог)
 
 
 ## 1. Исходная инфраструктура
@@ -145,7 +145,7 @@ ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
   'JAVA_HOME=$HOME/apps/java $HOME/apps/java/bin/jps'
 ```
 
-Ожидаемые процессы:
+Полученные процессы:
 
 ```text
 NameNode
@@ -160,7 +160,7 @@ ssh -i ~/.ssh/team28a_internal team28a@team-28-00 \
   'JAVA_HOME=$HOME/apps/java $HOME/apps/java/bin/jps'
 ```
 
-Ожидаемые процессы:
+Полученные процессы:
 
 ```text
 SecondaryNameNode
@@ -175,7 +175,7 @@ ssh -i ~/.ssh/team28a_internal team28a@team-28-01 \
   'JAVA_HOME=$HOME/apps/java $HOME/apps/java/bin/jps'
 ```
 
-Ожидаемые процессы:
+Полученные процессы:
 
 ```text
 DataNode
@@ -267,7 +267,7 @@ for host in team-28-nn team-28-00 team-28-01; do
 done
 ```
 
-Если после имени каждого узла отсутствуют строки `LISTEN`, выбранные порты свободны и могут использоваться кластером `team28a`.
+В результате после имени каждого узла строки `LISTEN` отсутствуют — выбранные порты свободны и могут использоваться кластером `team28a`.
 
 ## 4. Настройка `mapred-site.xml`
 
@@ -493,7 +493,7 @@ ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
   'JAVA_HOME=$HOME/apps/java $HOME/apps/java/bin/jps'
 ```
 
-В выводе должны присутствовать:
+В полученном выводе присутствуют:
 
 ```text
 NameNode
@@ -509,7 +509,7 @@ ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
   'ss -ltn | grep -E ":(28030|28031|28032|28033|28088)([[:space:]]|$)"'
 ```
 
-Ожидаются порты:
+Получены порты:
 
 ```text
 28030
@@ -519,7 +519,7 @@ ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
 28088
 ```
 
-Сервисы ResourceManager должны быть привязаны к `0.0.0.0`, чтобы принимать подключения от остальных узлов кластера.
+В результате сервисы ResourceManager привязаны к `0.0.0.0` и принимают подключения от остальных узлов кластера.
 
 ## 8. Запуск NodeManager
 
@@ -553,7 +553,7 @@ ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
   'ss -ltn | grep -E ":(28040|28042|28562)([[:space:]]|$)" || true'
 ```
 
-Ожидаются:
+Получены:
 
 ```text
 28040  — NodeManager localizer
@@ -568,13 +568,13 @@ ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
   'JAVA_HOME=$HOME/apps/java HADOOP_HOME=$HOME/apps/hadoop $HOME/apps/hadoop/bin/yarn node -list'
 ```
 
-В рабочем состоянии ResourceManager должен видеть три узла:
+В результате ResourceManager видит три узла:
 
 ```text
 Total Nodes:3
 ```
 
-Все три NodeManager должны находиться в состоянии `RUNNING`:
+Все три NodeManager находятся в состоянии `RUNNING`:
 
 ```text
 team-28-nn.hse.c.mws    RUNNING
@@ -602,7 +602,7 @@ ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
   'JAVA_HOME=$HOME/apps/java $HOME/apps/java/bin/jps'
 ```
 
-В выводе на `team-28-nn` должны присутствовать:
+В полученном выводе на `team-28-nn` присутствуют:
 
 ```text
 NameNode
@@ -620,7 +620,7 @@ ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
   'ss -ltn | grep -E ":(28120|28133|28188)([[:space:]]|$)"'
 ```
 
-Ожидаются:
+Получены:
 
 ```text
 28120  — RPC
@@ -645,7 +645,7 @@ for host in team-28-nn team-28-00 team-28-01; do
 done
 ```
 
-На `team-28-nn` должны быть запущены:
+На `team-28-nn` запущены:
 
 ```text
 NameNode
@@ -680,13 +680,13 @@ ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
   'JAVA_HOME=$HOME/apps/java HADOOP_HOME=$HOME/apps/hadoop $HOME/apps/hadoop/bin/yarn node -list'
 ```
 
-Ожидаемый результат:
+Полученный результат:
 
 ```text
 Total Nodes:3
 ```
 
-Все три NodeManager должны находиться в состоянии `RUNNING`.
+Все три NodeManager находятся в состоянии `RUNNING`.
 
 Итоговая архитектура работающего кластера:
 
@@ -721,7 +721,7 @@ tail -n 150 "$LOG" | grep -E "ERROR|FATAL|Exception" || echo "OK: critical error
 '
 ```
 
-Ожидаемый результат:
+Полученный результат:
 
 ```text
 OK: critical errors not found
@@ -740,7 +740,7 @@ tail -n +"$START" "$LOG" | grep -E "ERROR|FATAL|Exception" || echo "OK: critical
 '
 ```
 
-Ожидаемый результат:
+Полученный результат:
 
 ```text
 ===== current NodeManager run =====
@@ -756,7 +756,7 @@ tail -n 150 "$LOG" | grep -E "ERROR|FATAL|Exception" || echo "OK: critical error
 '
 ```
 
-Ожидаемый результат:
+Полученный результат:
 
 ```text
 OK: critical errors not found
@@ -774,7 +774,7 @@ for host in team-28-00 team-28-01; do
 done
 ```
 
-Для обоих узлов ожидается:
+Для обоих узлов получен результат:
 
 ```text
 OK: critical errors not found
@@ -801,7 +801,7 @@ do
 done
 ```
 
-В рабочем состоянии все пять адресов отвечают:
+В результате все пять адресов отвечают:
 
 ```text
 HTTP 302
