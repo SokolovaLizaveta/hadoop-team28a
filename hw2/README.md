@@ -690,4 +690,333 @@ team-28-01
 └── NodeManager
 ```
 
+## 11. Проверка логов Hadoop
 
+После запуска YARN проверяем логи ResourceManager, NodeManager и JobHistoryServer на наличие критических ошибок.
+
+### ResourceManager на `team-28-nn`
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn '
+LOG=$(ls -t ~/apps/hadoop/logs/*resourcemanager*.log | head -n 1)
+tail -n 150 "$LOG" | grep -E "ERROR|FATAL|Exception" || echo "OK: critical errors not found"
+'
+```
+
+Ожидаемый результат:
+
+```text
+OK: critical errors not found
+```
+
+### NodeManager на `team-28-nn`
+
+Поскольку в лог-файле могут сохраняться сообщения от предыдущих запусков, проверяем только текущий запуск NodeManager, начиная с последнего `STARTUP_MSG`:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn '
+LOG=$(ls -t ~/apps/hadoop/logs/*nodemanager*.log | head -n 1)
+START=$(grep -n "STARTUP_MSG: Starting NodeManager" "$LOG" | tail -n 1 | cut -d: -f1)
+echo "===== current NodeManager run ====="
+tail -n +"$START" "$LOG" | grep -E "ERROR|FATAL|Exception" || echo "OK: critical errors not found in current run"
+'
+```
+
+Ожидаемый результат:
+
+```text
+===== current NodeManager run =====
+OK: critical errors not found in current run
+```
+
+### JobHistoryServer на `team-28-nn`
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn '
+LOG=$(ls -t ~/apps/hadoop/logs/*historyserver*.log | head -n 1)
+tail -n 150 "$LOG" | grep -E "ERROR|FATAL|Exception" || echo "OK: critical errors not found"
+'
+```
+
+Ожидаемый результат:
+
+```text
+OK: critical errors not found
+```
+
+### NodeManager на `team-28-00` и `team-28-01`
+
+```bash
+for host in team-28-00 team-28-01; do
+  echo "===== $host: NodeManager ====="
+  ssh -i ~/.ssh/team28a_internal team28a@$host '
+  LOG=$(ls -t ~/apps/hadoop/logs/*nodemanager*.log | head -n 1)
+  tail -n 150 "$LOG" | grep -E "ERROR|FATAL|Exception" || echo "OK: critical errors not found"
+  '
+done
+```
+
+Для обоих узлов ожидается:
+
+```text
+OK: critical errors not found
+```
+
+Таким образом, текущие запуски ResourceManager, трех NodeManager и JobHistoryServer работают без критических ошибок.
+
+## 12. Публикация и проверка Web UI
+
+Сначала проверяем доступность веб-интерфейсов из внутренней сети кластера.
+
+На edge-узле `team-28-en` выполняем:
+
+```bash
+for url in \
+  http://team-28-nn:28088 \
+  http://team-28-nn:28188 \
+  http://team-28-nn:28042 \
+  http://team-28-00:28042 \
+  http://team-28-01:28042
+do
+  echo -n "$url -> "
+  curl -s -o /dev/null -w "HTTP %{http_code}\n" "$url"
+done
+```
+
+В рабочем состоянии все пять адресов отвечают:
+
+```text
+HTTP 302
+```
+
+Код `302` означает перенаправление с корневого URL на страницу соответствующего Hadoop Web UI.
+
+Для доступа к интерфейсам с внешней машины используется SSH port forwarding через edge-узел `team-28-en`.
+
+Команда выполняется на локальном компьютере, а не на сервере:
+
+```bash
+ssh -N \
+  -L 8088:team-28-nn:28088 \
+  -L 19888:team-28-nn:28188 \
+  -L 8042:team-28-nn:28042 \
+  -L 8043:team-28-00:28042 \
+  -L 8044:team-28-01:28042 \
+  team28a@2.59.83.133
+```
+
+После запуска команды SSH-сессия остается открытой и поддерживает туннели.
+
+В браузере доступны следующие адреса:
+
+| Локальный адрес | Сервис |
+|---|---|
+| `http://localhost:8088` | ResourceManager |
+| `http://localhost:19888` | JobHistoryServer |
+| `http://localhost:8042` | NodeManager на `team-28-nn` |
+| `http://localhost:8043` | NodeManager на `team-28-00` |
+| `http://localhost:8044` | NodeManager на `team-28-01` |
+
+### ResourceManager Web UI
+
+В ResourceManager Web UI отображаются три активных NodeManager:
+
+```text
+Active Nodes: 3
+Lost Nodes: 0
+Unhealthy Nodes: 0
+```
+
+![ResourceManager Web UI](images/resourcemanager.jpg)
+
+### JobHistoryServer Web UI
+
+JobHistoryServer доступен по адресу:
+
+```text
+http://localhost:19888
+```
+
+Так как отдельные MapReduce-задания в рамках данной работы не запускались, список завершенных заданий пуст.
+
+![JobHistoryServer Web UI](images/jobhistory.jpg)
+
+### NodeManager Web UI
+
+Web UI NodeManager показывает состояние узла и информацию о доступных ресурсах. Для работающего NodeManager значение `NodeHealthStatus` равно `true`.
+
+![NodeManager Web UI](images/nodemanager.jpg)
+
+Таким образом, Web UI ResourceManager, JobHistoryServer и всех трех NodeManager доступны с внешней машины через SSH-туннель без публикации Hadoop-интерфейсов напрямую в интернет.
+
+## 13. Финальная контрольная проверка
+
+После завершения настройки выполняем единую контрольную проверку процессов, состояния YARN и доступности веб-интерфейсов.
+
+На edge-узле `team-28-en` выполняем:
+
+```bash
+echo "===== JAVA PROCESSES ====="
+for host in team-28-nn team-28-00 team-28-01; do
+  echo "===== $host ====="
+  ssh -i ~/.ssh/team28a_internal team28a@$host \
+    'JAVA_HOME=$HOME/apps/java $HOME/apps/java/bin/jps'
+  echo
+done
+
+echo "===== YARN NODES ====="
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'JAVA_HOME=$HOME/apps/java HADOOP_HOME=$HOME/apps/hadoop $HOME/apps/hadoop/bin/yarn node -list'
+
+echo
+echo "===== WEB UI ====="
+for url in \
+  http://team-28-nn:28088 \
+  http://team-28-nn:28188 \
+  http://team-28-nn:28042 \
+  http://team-28-00:28042 \
+  http://team-28-01:28042
+do
+  echo -n "$url -> "
+  curl -s -o /dev/null -w "HTTP %{http_code}\n" "$url"
+done
+```
+
+В рабочем состоянии на `team-28-nn` должны быть запущены:
+
+```text
+NameNode
+DataNode
+ResourceManager
+NodeManager
+JobHistoryServer
+```
+
+На `team-28-00`:
+
+```text
+SecondaryNameNode
+DataNode
+NodeManager
+```
+
+На `team-28-01`:
+
+```text
+DataNode
+NodeManager
+```
+
+Команда `yarn node -list` должна показывать:
+
+```text
+Total Nodes:3
+```
+
+Все три NodeManager должны находиться в состоянии:
+
+```text
+RUNNING
+```
+
+Внутренние Web UI должны отвечать HTTP-кодом:
+
+```text
+HTTP 302
+```
+
+для следующих адресов:
+
+```text
+http://team-28-nn:28088
+http://team-28-nn:28188
+http://team-28-nn:28042
+http://team-28-00:28042
+http://team-28-01:28042
+```
+
+Полученные результаты подтверждают, что все необходимые демоны запущены, три NodeManager зарегистрированы в ResourceManager, а веб-интерфейсы доступны внутри кластера.
+
+## 14. Структура файлов домашнего задания
+
+Файлы домашнего задания размещаются в отдельном каталоге репозитория:
+
+```text
+hw2-yarn/
+├── README.md
+└── images/
+    ├── resourcemanager.jpg
+    ├── jobhistory.jpg
+    └── nodemanager.jpg
+```
+
+В каталоге `images/` размещены скриншоты, подтверждающие работу веб-интерфейсов:
+
+- `resourcemanager.jpg` — ResourceManager Web UI с тремя активными NodeManager;
+- `jobhistory.jpg` — JobHistoryServer Web UI;
+- `nodemanager.jpg` — NodeManager Web UI с `NodeHealthStatus = true`.
+
+Файл `README.md` содержит полную пошаговую инструкцию ручного развертывания и проверки YARN-кластера.
+
+## 15. Итог
+
+В результате домашнего задания №2 поверх существующего HDFS-кластера был вручную развернут YARN.
+
+Итоговая архитектура:
+
+```text
+team-28-nn
+├── NameNode
+├── DataNode
+├── ResourceManager
+├── NodeManager
+└── JobHistoryServer
+
+team-28-00
+├── SecondaryNameNode
+├── DataNode
+└── NodeManager
+
+team-28-01
+├── DataNode
+└── NodeManager
+```
+
+В результате настроены и проверены:
+
+- 1 ResourceManager;
+- 3 NodeManager;
+- 1 JobHistoryServer;
+- вспомогательный сервис `mapreduce_shuffle`;
+- отдельный набор портов для YARN-кластера `team28a`;
+- регистрация трех NodeManager в ResourceManager;
+- отсутствие критических ошибок в текущих логах;
+- Web UI ResourceManager;
+- Web UI JobHistoryServer;
+- Web UI NodeManager.
+
+ResourceManager видит три активных NodeManager:
+
+```text
+Total Nodes:3
+```
+
+Все три узла находятся в состоянии:
+
+```text
+RUNNING
+```
+
+Веб-интерфейсы доступны с внешнего компьютера через SSH port forwarding через edge-узел `team-28-en`:
+
+```text
+http://localhost:8088   — ResourceManager
+http://localhost:19888  — JobHistoryServer
+http://localhost:8042   — NodeManager team-28-nn
+http://localhost:8043   — NodeManager team-28-00
+http://localhost:8044   — NodeManager team-28-01
+```
+
+Hadoop Web UI не публикуются напрямую в интернет: внешний доступ выполняется через защищенный SSH-туннель.
+
+Существующий HDFS-кластер из домашнего задания №1 продолжает работать без изменения его данных и основной конфигурации.
