@@ -456,3 +456,238 @@ scp -i ~/.ssh/team28a_internal ~/yarn-site.xml \
 После этого на всех трех Hadoop-узлах используются одинаковые конфигурационные файлы `mapred-site.xml` и `yarn-site.xml`.
 
 ResourceManager будет запущен на `team-28-nn`, а NodeManager — на каждом из трех внутренних узлов.
+
+## 7. Запуск ResourceManager
+
+ResourceManager запускается на узле `team-28-nn`.
+
+С edge-узла `team-28-en` выполняем:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'JAVA_HOME=$HOME/apps/java HADOOP_HOME=$HOME/apps/hadoop $HOME/apps/hadoop/bin/yarn --daemon start resourcemanager'
+```
+
+Проверяем, что процесс ResourceManager запущен:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'JAVA_HOME=$HOME/apps/java $HOME/apps/java/bin/jps'
+```
+
+В выводе должны присутствовать:
+
+```text
+NameNode
+DataNode
+ResourceManager
+Jps
+```
+
+Проверяем, что ResourceManager слушает настроенные порты:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'ss -ltn | grep -E ":(28030|28031|28032|28033|28088)([[:space:]]|$)"'
+```
+
+Ожидаются порты:
+
+```text
+28030
+28031
+28032
+28033
+28088
+```
+
+Сервисы ResourceManager должны быть привязаны к `0.0.0.0`, чтобы принимать подключения от остальных узлов кластера.
+
+## 8. Запуск NodeManager
+
+NodeManager запускается на каждом из трех внутренних Hadoop-узлов.
+
+На `team-28-nn`:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'JAVA_HOME=$HOME/apps/java HADOOP_HOME=$HOME/apps/hadoop $HOME/apps/hadoop/bin/yarn --daemon start nodemanager'
+```
+
+На `team-28-00`:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-00 \
+  'JAVA_HOME=$HOME/apps/java HADOOP_HOME=$HOME/apps/hadoop $HOME/apps/hadoop/bin/yarn --daemon start nodemanager'
+```
+
+На `team-28-01`:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-01 \
+  'JAVA_HOME=$HOME/apps/java HADOOP_HOME=$HOME/apps/hadoop $HOME/apps/hadoop/bin/yarn --daemon start nodemanager'
+```
+
+Проверяем на `team-28-nn`, что NodeManager использует настроенные порты:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'ss -ltn | grep -E ":(28040|28042|28562)([[:space:]]|$)" || true'
+```
+
+Ожидаются:
+
+```text
+28040  — NodeManager localizer
+28042  — NodeManager Web UI
+28562  — MapReduce ShuffleHandler
+```
+
+После запуска всех трех NodeManager проверяем их регистрацию в ResourceManager:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'JAVA_HOME=$HOME/apps/java HADOOP_HOME=$HOME/apps/hadoop $HOME/apps/hadoop/bin/yarn node -list'
+```
+
+В рабочем состоянии ResourceManager должен видеть три узла:
+
+```text
+Total Nodes:3
+```
+
+Все три NodeManager должны находиться в состоянии `RUNNING`:
+
+```text
+team-28-nn.hse.c.mws    RUNNING
+team-28-00.hse.c.mws    RUNNING
+team-28-01.hse.c.mws    RUNNING
+```
+
+После этого основная часть YARN-кластера состоит из одного ResourceManager и трех зарегистрированных NodeManager.
+
+## 9. Запуск JobHistoryServer
+
+JobHistoryServer запускается на узле `team-28-nn`.
+
+С edge-узла `team-28-en` выполняем:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'JAVA_HOME=$HOME/apps/java HADOOP_HOME=$HOME/apps/hadoop $HOME/apps/hadoop/bin/mapred --daemon start historyserver'
+```
+
+Проверяем, что процесс JobHistoryServer появился:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'JAVA_HOME=$HOME/apps/java $HOME/apps/java/bin/jps'
+```
+
+В выводе на `team-28-nn` должны присутствовать:
+
+```text
+NameNode
+DataNode
+ResourceManager
+NodeManager
+JobHistoryServer
+Jps
+```
+
+Проверяем, что JobHistoryServer слушает настроенные порты:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'ss -ltn | grep -E ":(28120|28133|28188)([[:space:]]|$)"'
+```
+
+Ожидаются:
+
+```text
+28120  — RPC
+28133  — admin
+28188  — Web UI
+```
+
+В рабочей конфигурации эти порты привязаны к `0.0.0.0`, поэтому JobHistoryServer доступен через сетевые интерфейсы узла.
+
+## 10. Финальная проверка процессов
+
+После запуска ResourceManager, трех NodeManager и JobHistoryServer проверяем процессы на всех трех внутренних узлах.
+
+С edge-узла `team-28-en` выполняем:
+
+```bash
+for host in team-28-nn team-28-00 team-28-01; do
+  echo "===== $host ====="
+  ssh -i ~/.ssh/team28a_internal team28a@$host \
+    'JAVA_HOME=$HOME/apps/java $HOME/apps/java/bin/jps'
+  echo
+done
+```
+
+На `team-28-nn` должны быть запущены:
+
+```text
+NameNode
+DataNode
+ResourceManager
+NodeManager
+JobHistoryServer
+Jps
+```
+
+На `team-28-00`:
+
+```text
+SecondaryNameNode
+DataNode
+NodeManager
+Jps
+```
+
+На `team-28-01`:
+
+```text
+DataNode
+NodeManager
+Jps
+```
+
+Дополнительно проверяем состояние YARN-кластера:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn \
+  'JAVA_HOME=$HOME/apps/java HADOOP_HOME=$HOME/apps/hadoop $HOME/apps/hadoop/bin/yarn node -list'
+```
+
+Ожидаемый результат:
+
+```text
+Total Nodes:3
+```
+
+Все три NodeManager должны находиться в состоянии `RUNNING`.
+
+Итоговая архитектура работающего кластера:
+
+```text
+team-28-nn
+├── NameNode
+├── DataNode
+├── ResourceManager
+├── NodeManager
+└── JobHistoryServer
+
+team-28-00
+├── SecondaryNameNode
+├── DataNode
+└── NodeManager
+
+team-28-01
+├── DataNode
+└── NodeManager
+```
+
+
