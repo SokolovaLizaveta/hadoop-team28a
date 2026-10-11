@@ -44,8 +44,7 @@ team-28-01
 10. [Финальная проверка процессов](#10-финальная-проверка-процессов)
 11. [Проверка логов Hadoop](#11-проверка-логов-hadoop)
 12. [Публикация и проверка Web UI](#12-публикация-и-проверка-web-ui)
-13. [Структура файлов домашнего задания](#13-структура-файлов-домашнего-задания)
-14. [Итог](#14-итог)
+13. [Итог](#13-итог)
 
 
 ## 1. Исходная инфраструктура
@@ -867,53 +866,11 @@ Web UI NodeManager показывает состояние узла и инфо�
 
 Таким образом, Web UI ResourceManager, JobHistoryServer и всех трех NodeManager доступны с внешней машины через SSH-туннель без публикации Hadoop-интерфейсов напрямую в интернет.
 
-
-## 13. Структура файлов домашнего задания
-
-Файлы домашнего задания размещаются в отдельном каталоге репозитория:
-
-```text
-hw2-yarn/
-├── README.md
-└── images/
-    ├── resourcemanager.jpg
-    ├── jobhistory.jpg
-    └── nodemanager.jpg
-```
-
-В каталоге `images/` размещены скриншоты, подтверждающие работу веб-интерфейсов:
-
-- `resourcemanager.jpg` — ResourceManager Web UI с тремя активными NodeManager;
-- `jobhistory.jpg` — JobHistoryServer Web UI;
-- `nodemanager.jpg` — NodeManager Web UI с `NodeHealthStatus = true`.
-
-Файл `README.md` содержит полную пошаговую инструкцию ручного развертывания и проверки YARN-кластера.
-
-## 14. Итог
+## 13. Итог
 
 В результате домашнего задания №2 поверх существующего HDFS-кластера был вручную развернут YARN.
 
-Итоговая архитектура:
-
-```text
-team-28-nn
-├── NameNode
-├── DataNode
-├── ResourceManager
-├── NodeManager
-└── JobHistoryServer
-
-team-28-00
-├── SecondaryNameNode
-├── DataNode
-└── NodeManager
-
-team-28-01
-├── DataNode
-└── NodeManager
-```
-
-В результате настроены и проверены:
+Настроены и проверены:
 
 - 1 ResourceManager;
 - 3 NodeManager;
