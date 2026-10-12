@@ -864,7 +864,7 @@ Web UI NodeManager показывает состояние узла и инфо�
 
 ![NodeManager Web UI](images/nodemanager.jpg)
 
-Таким образом, Web UI ResourceManager, JobHistoryServer и всех трех NodeManager доступны с внешней машины через SSH-туннель без публикации Hadoop-интерфейсов напрямую в интернет.
+Таким образом, Web UI ResourceManager, JobHistoryServer и всех трех NodeManager доступны с внешней машины через SSH-туннель.
 
 ## 13. Итог
 
@@ -904,7 +904,3 @@ http://localhost:8042   — NodeManager team-28-nn
 http://localhost:8043   — NodeManager team-28-00
 http://localhost:8044   — NodeManager team-28-01
 ```
-
-Веб-интерфейсы Hadoop не публикуются напрямую в интернет. 
-
-Существующий HDFS-кластер из домашнего задания №1 продолжает работать без изменения его данных и основной конфигурации.
