@@ -43,7 +43,7 @@ team-28-01
 └── PostgreSQL
 ```
 
-HiveServer2 используется как точка подключения клиентов Hive. Hive Metastore работает как отдельный сервис и хранит metadata в PostgreSQL, поэтому embedded Metastore не используется.
+HiveServer2 используется как точка подключения клиентов Hive. Hive Metastore работает как отдельный сервис и хранит метаданные в PostgreSQL, поэтому embedded Metastore не используется.
 
 ## Содержание
 
@@ -152,7 +152,7 @@ for host in team-28-nn team-28-00 team-28-01; do
 done
 ```
 
-На `team-28-nn` должны присутствовать:
+На `team-28-nn` присутствуют:
 
 ```text
 NameNode
@@ -223,7 +223,7 @@ yarn node -list
 Total Nodes:3
 ```
 
-Все три NodeManager должны находиться в состоянии:
+Все три NodeManager находятся в состоянии:
 
 ```text
 RUNNING
@@ -253,7 +253,7 @@ Total number of applications (application-types: [], states: [RUNNING] and tags:
 
 Перед запуском Hive были ограничены ресурсы YARN. Это необходимо, поскольку пользователи `team28a` и `team28b` работают на одних физических виртуальных машинах, а их YARN-кластеры не координируют использование общей оперативной памяти.
 
-Существующие адреса и порты YARN из домашнего задания №2 сохраняются. В рамках этого этапа изменяются только лимиты ресурсов NodeManager и resource calculator CapacityScheduler.
+Существующие адреса и порты YARN из домашнего задания №2 сохраняются. В рамках этого этапа изменяются только лимиты ресурсов NodeManager и калькулятор ресурсов CapacityScheduler.
 
 Перед изменением конфигурации сохраняем резервные копии:
 
@@ -303,7 +303,7 @@ cp ~/apps/hadoop/etc/hadoop/capacity-scheduler.xml    ~/config-backups/yarn-befo
 </property>
 ```
 
-Таким образом, NodeManager на `team-28-nn` предоставляет YARN:
+NodeManager на `team-28-nn` предоставляет YARN:
 
 ```text
 1024 MB
@@ -335,7 +335,7 @@ NodeManager на `team-28-00` предоставляет:
 
 ### Ресурсы NodeManager на `team-28-01`
 
-На `team-28-01` используются те же лимиты, что и на втором worker-узле:
+На `team-28-01` используются те же лимиты, что и на втором рабочем узле:
 
 ```xml
 <property>
@@ -364,7 +364,7 @@ NodeManager на `team-28-00` предоставляет:
 ~/apps/hadoop/etc/hadoop/capacity-scheduler.xml
 ```
 
-добавлен resource calculator:
+добавлен калькулятор ресурсов:
 
 ```xml
 <property>
@@ -373,7 +373,7 @@ NodeManager на `team-28-00` предоставляет:
 </property>
 ```
 
-`DominantResourceCalculator` позволяет scheduler учитывать одновременно память и число vcore при распределении ресурсов.
+`DominantResourceCalculator` позволяет планировщику учитывать одновременно память и число vcore при распределении ресурсов.
 
 ### Проверка `mapred-site.xml`
 
@@ -450,7 +450,7 @@ yarn node -list -showDetails
 '
 ```
 
-В результате ResourceManager зарегистрировал три NodeManager со следующими ресурсами:
+ResourceManager зарегистрировал три NodeManager со следующими ресурсами:
 
 ```text
 team-28-nn
@@ -468,9 +468,6 @@ Configured Resources : <memory:3072, vCores:2>
 ```text
 RUNNING
 ```
-
-Таким образом, перед запуском Hive ресурсы YARN ограничены и распределены между master- и worker-узлами.
-
 
 ## 4. Проверка MapReduce
 
@@ -661,11 +658,11 @@ team-28-01
 /home/team28a/postgresql/log
 ```
 
-Таким образом, Hive и PostgreSQL разворачиваются без `sudo` и используют отдельные пользовательские каталоги и порты команды `team28a`.
+Hive и PostgreSQL разворачиваются без `sudo` и используют отдельные пользовательские каталоги и порты команды `team28a`.
 
 ## 6. Установка PostgreSQL
 
-Для хранения metadata Hive используется PostgreSQL на узле `team-28-01`. Пользователь `team28a` не имеет прав `sudo`, поэтому PostgreSQL устанавливается в домашний каталог путем загрузки и распаковки Debian-пакетов.
+Для хранения метаданных Hive используется PostgreSQL на узле `team-28-01`. Пользователь `team28a` не имеет прав `sudo`, поэтому PostgreSQL устанавливается в домашний каталог путем загрузки и распаковки Debian-пакетов.
 
 Подключаемся к `team-28-01`:
 
@@ -757,7 +754,7 @@ psql (PostgreSQL) 16.15
 
 ### Создание каталогов PostgreSQL
 
-Создаем каталоги для данных, Unix socket и логов:
+Создаем каталоги для данных, Unix-сокета и логов:
 
 ```bash
 mkdir -p ~/postgresql/data          ~/postgresql/run          ~/postgresql/log
@@ -779,7 +776,7 @@ mkdir -p ~/postgresql/data          ~/postgresql/run          ~/postgresql/log
 $PG_HOME/bin/initdb   -D $HOME/postgresql/data   --encoding=UTF8   --locale=C.UTF-8   --auth-local=trust   --auth-host=scram-sha-256
 ```
 
-В результате служебные файлы PostgreSQL созданы в:
+Служебные файлы PostgreSQL созданы в:
 
 ```text
 /home/team28a/postgresql/data
@@ -806,13 +803,13 @@ unix_socket_directories = '/home/team28a/postgresql/run'
 EOF
 ```
 
-В результате PostgreSQL принимает сетевые подключения по внутреннему адресу:
+PostgreSQL принимает сетевые подключения по внутреннему адресу:
 
 ```text
 10.28.0.13:29432
 ```
 
-и создает Unix socket в каталоге:
+и создает Unix-сокет в каталоге:
 
 ```text
 /home/team28a/postgresql/run
@@ -840,7 +837,7 @@ host    metastore    hive    10.28.0.13/32    scram-sha-256
 EOF
 ```
 
-Таким образом, пользователь `hive` получает сетевой доступ только к базе `metastore` с четырех внутренних адресов инфраструктуры `team-28`.
+Пользователь `hive` получает сетевой доступ только к базе `metastore` с четырех внутренних адресов инфраструктуры `team-28`.
 
 ### Запуск PostgreSQL
 
@@ -864,7 +861,7 @@ ss -ltn | grep ':29432'
 
 ### Создание пользователя и базы Hive Metastore
 
-Подключаемся к PostgreSQL через локальный Unix socket:
+Подключаемся к PostgreSQL через локальный Unix-сокет:
 
 ```bash
 $PG_HOME/bin/psql   -h $HOME/postgresql/run   -p 29432   -U team28a   -d postgres
@@ -1031,9 +1028,9 @@ Hive 4.0.0-alpha-2
 
 ## 9. Настройка PostgreSQL JDBC Driver
 
-Для подключения Hive Metastore к PostgreSQL необходим JDBC driver PostgreSQL. Driver размещается в каталоге библиотек Hive на `team-28-nn`. Продолжаем работу на `team-28-nn` с переменными окружения, заданными при установке Hive.
+Для подключения Hive Metastore к PostgreSQL необходим JDBC-драйвер PostgreSQL. Драйвер размещается в каталоге библиотек Hive на `team-28-nn`. Продолжаем работу на `team-28-nn` с переменными окружения, заданными при установке Hive.
 
-### Загрузка JDBC Driver
+### Загрузка JDBC-драйвера
 
 Переходим в каталог библиотек Hive:
 
@@ -1062,7 +1059,7 @@ postgresql-42.7.14.jar
 
 ### Проверка класса JDBC Driver
 
-Проверяем наличие основного класса PostgreSQL Driver в загруженном JAR:
+Проверяем наличие основного класса PostgreSQL-драйвера в загруженном JAR:
 
 ```bash
 jar tf "$HIVE_HOME/lib/postgresql-42.7.14.jar"   | grep '^org/postgresql/Driver.class$'
@@ -1080,8 +1077,6 @@ org/postgresql/Driver.class
 org.postgresql.Driver
 ```
 
-Таким образом, необходимые PostgreSQL JDBC-библиотеки доступны Hive Metastore.
-
 ## 10. Настройка `hive-site.xml`
 
 Основная конфигурация Hive задается на `team-28-nn` в файле:
@@ -1096,7 +1091,7 @@ org.postgresql.Driver
 - каталог Hive warehouse в HDFS;
 - адрес отдельного Hive Metastore;
 - параметры HiveServer2;
-- MapReduce как execution engine.
+- MapReduce как движок выполнения.
 
 Создаем `hive-site.xml` (перед созданием необходимо заменить <HIVE_DB_PASSWORD> на фактический пароль пользователя hive, как упоминалось выше):
 
@@ -1252,7 +1247,7 @@ hdfs dfs -mkdir -p /user/hive/warehouse
 hdfs dfs -ls -d /user/hive/warehouse
 ```
 
-В результате в HDFS создан каталог:
+В HDFS создан каталог:
 
 ```text
 /user/hive/warehouse
@@ -1464,7 +1459,7 @@ tail -n 30 ~/logs/hive-server2-final.log
 
 ## 14. Проверка подключения через Beeline
 
-Все команды всё также выполняются на `team-28-nn`.
+Продолжаем работу на `team-28-nn`.
 
 Подключаемся к HiveServer2:
 
@@ -1478,17 +1473,16 @@ beeline   -u 'jdbc:hive2://10.28.0.11:29000/default'   -n team28a
 10.28.0.11:29000
 ```
 
-Для проверки выполняем:
+Для проверки выполняем запрос, не зависящий от созданных позднее баз данных:
 
 ```sql
-SHOW DATABASES;
+SELECT current_database();
 ```
 
-Получили:
+Текущая база данных:
 
 ```text
 default
-hw3
 ```
 
 Версия сервера при подключении:
@@ -1678,7 +1672,7 @@ DESCRIBE hw3.events_staging;
 DESCRIBE hw3.events_partitioned;
 ```
 
-Для `events_partitioned` Hive отдельно отображает partition column:
+Для `events_partitioned` Hive отдельно отображает столбец партиционирования:
 
 ```text
 event_date    string
@@ -1916,7 +1910,11 @@ done
 
 ## 19. Финальная проверка сервисов
 
-После завершения настройки Hive и загрузки данных выполняем финальную проверку состояния кластера.
+После завершения настройки Hive и загрузки данных выполняем финальную проверку состояния кластера. Для этого возвращаемся на edge-узел:
+
+```bash
+exit
+```
 
 ### Проверка процессов
 
@@ -1967,7 +1965,7 @@ NodeManager
 ssh -i ~/.ssh/team28a_internal team28a@team-28-01   'ss -ltn | grep ":29432"'
 ```
 
-Получили слушающий порт:
+PostgreSQL слушает адрес:
 
 ```text
 10.28.0.13:29432
@@ -1979,7 +1977,7 @@ ssh -i ~/.ssh/team28a_internal team28a@team-28-01   'ss -ltn | grep ":29432"'
 ssh -i ~/.ssh/team28a_internal team28a@team-28-nn   'ss -ltn | grep -E ":(29083|29000|29002)([[:space:]]|$)"'
 ```
 
-Получили:
+Активные порты Hive:
 
 ```text
 29083
@@ -1989,7 +1987,22 @@ ssh -i ~/.ssh/team28a_internal team28a@team-28-nn   'ss -ltn | grep -E ":(29083|
 
 ### Проверка HDFS
 
-На `team-28-nn` выполняем:
+Для проверки HDFS, YARN и Hive снова подключаемся к `team-28-nn`:
+
+```bash
+ssh -i ~/.ssh/team28a_internal team28a@team-28-nn
+```
+
+Задаем переменные окружения:
+
+```bash
+export JAVA_HOME=$HOME/apps/java
+export HADOOP_HOME=$HOME/apps/hadoop
+export HIVE_HOME=$HOME/apps/hive
+export PATH=$JAVA_HOME/bin:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$HIVE_HOME/bin:$PATH
+```
+
+Проверяем состояние HDFS:
 
 ```bash
 hdfs dfsadmin -safemode get
@@ -1997,7 +2010,7 @@ hdfs dfsadmin -safemode get
 hdfs dfsadmin -report   | grep -E     'Under replicated blocks:|Blocks with corrupt replicas:|Missing blocks:|Live datanodes'
 ```
 
-Получили:
+Состояние HDFS:
 
 ```text
 Safe mode is OFF
@@ -2013,7 +2026,7 @@ Live datanodes (3)
 hdfs fsck /
 ```
 
-Получили:
+Проверка файловой системы:
 
 ```text
 Status: HEALTHY
@@ -2028,7 +2041,7 @@ The filesystem under path '/' is HEALTHY
 yarn node -list -showDetails
 ```
 
-Получили:
+ResourceManager зарегистрировал:
 
 ```text
 Total Nodes:3
@@ -2046,7 +2059,7 @@ RUNNING
 yarn application -list -appStates RUNNING
 ```
 
-Получили:
+Запущенных YARN-приложений:
 
 ```text
 Total number of applications (application-types: [], states: [RUNNING] and tags: []):0
@@ -2060,8 +2073,7 @@ Total number of applications (application-types: [], states: [RUNNING] and tags:
 beeline   -u 'jdbc:hive2://10.28.0.11:29000/default'   -n team28a   -e 'SHOW DATABASES; SHOW TABLES IN hw3; SHOW PARTITIONS hw3.events_partitioned;'
 ```
 
-Получили:
-
+Hive возвращает:
 ```text
 default
 hw3
