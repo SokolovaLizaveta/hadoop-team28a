@@ -603,6 +603,12 @@ hdfs dfs -rm -r -f /tmp/team28a-yarn-smoke
 rm -f ~/yarn-smoke.txt
 ```
 
+Возвращаемся на edge-узел:
+
+```bash
+exit
+```
+
 ## 5. Выбор портов и каталогов Hive
 
 Перед установкой PostgreSQL и Hive проверяем свободные TCP-порты. Виртуальные машины используются двумя командами, поэтому для сервисов `team28a` выбираются отдельные порты, не пересекающиеся с уже работающими сервисами.
@@ -747,20 +753,7 @@ psql (PostgreSQL) 16.15
 
 ## 7. Настройка PostgreSQL для Hive Metastore
 
-После установки PostgreSQL на `team-28-01` создаем отдельный экземпляр базы данных для Hive Metastore.
-
-Подключаемся к узлу:
-
-```bash
-ssh -i ~/.ssh/team28a_internal team28a@team-28-01
-```
-
-Задаем переменные окружения:
-
-```bash
-export PG_HOME=$HOME/apps/postgresql/usr/lib/postgresql/16
-export LD_LIBRARY_PATH=$HOME/apps/postgresql/usr/lib/x86_64-linux-gnu
-```
+После установки PostgreSQL на `team-28-01` создаем отдельный экземпляр базы данных для Hive Metastore. Продолжаем работу на `team-28-01`. Переменные окружения PostgreSQL, заданные в предыдущем разделе, остаются активны в текущей сессии.
 
 ### Создание каталогов PostgreSQL
 
@@ -1038,22 +1031,7 @@ Hive 4.0.0-alpha-2
 
 ## 9. Настройка PostgreSQL JDBC Driver
 
-Для подключения Hive Metastore к PostgreSQL необходим JDBC driver PostgreSQL. Driver размещается в каталоге библиотек Hive на `team-28-nn`.
-
-Подключаемся к `team-28-nn`:
-
-```bash
-ssh -i ~/.ssh/team28a_internal team28a@team-28-nn
-```
-
-Задаем переменные окружения:
-
-```bash
-export JAVA_HOME=$HOME/apps/java
-export HADOOP_HOME=$HOME/apps/hadoop
-export HIVE_HOME=$HOME/apps/hive
-export PATH=$JAVA_HOME/bin:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$HIVE_HOME/bin:$PATH
-```
+Для подключения Hive Metastore к PostgreSQL необходим JDBC driver PostgreSQL. Driver размещается в каталоге библиотек Hive на `team-28-nn`. Продолжаем работу на `team-28-nn` с переменными окружения, заданными при установке Hive.
 
 ### Загрузка JDBC Driver
 
@@ -1120,16 +1098,7 @@ org.postgresql.Driver
 - параметры HiveServer2;
 - MapReduce как execution engine.
 
-Перед созданием файла задаем переменные окружения:
-
-```bash
-export JAVA_HOME=$HOME/apps/java
-export HADOOP_HOME=$HOME/apps/hadoop
-export HIVE_HOME=$HOME/apps/hive
-export PATH=$JAVA_HOME/bin:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$HIVE_HOME/bin:$PATH
-```
-
-Создаем `hive-site.xml`:
+Создаем `hive-site.xml` (перед созданием необходимо заменить <HIVE_DB_PASSWORD> на фактический пароль пользователя hive, как упоминалось выше):
 
 ```bash
 cat > "$HIVE_HOME/conf/hive-site.xml" <<'EOF'
@@ -1269,24 +1238,7 @@ Embedded-подход в данной конфигурации согласно 
 
 ## 11. Подготовка HDFS warehouse
 
-Перед инициализацией Hive Metastore создаем каталог warehouse в HDFS.
-
-Все команды выполняются на `team-28-nn`.
-
-Подключаемся к узлу:
-
-```bash
-ssh -i ~/.ssh/team28a_internal team28a@team-28-nn
-```
-
-Задаем переменные окружения:
-
-```bash
-export JAVA_HOME=$HOME/apps/java
-export HADOOP_HOME=$HOME/apps/hadoop
-export HIVE_HOME=$HOME/apps/hive
-export PATH=$JAVA_HOME/bin:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$HIVE_HOME/bin:$PATH
-```
+Перед инициализацией Hive Metastore создаем каталог warehouse в HDFS. Все команды продолжаем выполнять на `team-28-nn`.
 
 Создаем каталог Hive warehouse:
 
@@ -1317,18 +1269,7 @@ hdfs dfs -ls -d /user/hive/warehouse
 
 ## 12. Инициализация схемы и запуск Hive Metastore
 
-После настройки PostgreSQL, JDBC Driver, `hive-site.xml` и HDFS warehouse инициализируем схему Hive Metastore в базе PostgreSQL `metastore`.
-
-Все команды выполняются на `team-28-nn`.
-
-Задаем переменные окружения:
-
-```bash
-export JAVA_HOME=$HOME/apps/java
-export HADOOP_HOME=$HOME/apps/hadoop
-export HIVE_HOME=$HOME/apps/hive
-export PATH=$JAVA_HOME/bin:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$HIVE_HOME/bin:$PATH
-```
+После настройки PostgreSQL, JDBC Driver, `hive-site.xml` и HDFS warehouse инициализируем схему Hive Metastore в базе PostgreSQL `metastore`. Все команды выполняются на `team-28-nn`.
 
 ### Инициализация схемы
 
@@ -1379,21 +1320,6 @@ Metastore schema version: 4.0.0-alpha-2
 
 
 ### Запуск
-
-Подключаемся к узлу:
-
-```bash
-ssh -i ~/.ssh/team28a_internal team28a@team-28-nn
-```
-
-Задаем переменные окружения:
-
-```bash
-export JAVA_HOME=$HOME/apps/java
-export HADOOP_HOME=$HOME/apps/hadoop
-export HIVE_HOME=$HOME/apps/hive
-export PATH=$JAVA_HOME/bin:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$HIVE_HOME/bin:$PATH
-```
 
 Создаем каталог для логов:
 
@@ -1462,15 +1388,6 @@ tail -n 30 ~/logs/hive-metastore-final.log
 ## 13. Запуск HiveServer2
 
 После запуска Hive Metastore запускаем HiveServer2 на `team-28-nn`. HiveServer2 используется как клиентская точка доступа к Hive и позволяет одновременно подключать несколько клиентов.
-
-На `team-28-nn` задаем переменные окружения:
-
-```bash
-export JAVA_HOME=$HOME/apps/java
-export HADOOP_HOME=$HOME/apps/hadoop
-export HIVE_HOME=$HOME/apps/hive
-export PATH=$JAVA_HOME/bin:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$HIVE_HOME/bin:$PATH
-```
 
 Запускаем HiveServer2 в фоновом режиме:
 
@@ -1547,16 +1464,7 @@ tail -n 30 ~/logs/hive-server2-final.log
 
 ## 14. Проверка подключения через Beeline
 
-Все команды выполняются на `team-28-nn`.
-
-Задаем переменные окружения:
-
-```bash
-export JAVA_HOME=$HOME/apps/java
-export HADOOP_HOME=$HOME/apps/hadoop
-export HIVE_HOME=$HOME/apps/hive
-export PATH=$JAVA_HOME/bin:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$HIVE_HOME/bin:$PATH
-```
+Все команды всё также выполняются на `team-28-nn`.
 
 Подключаемся к HiveServer2:
 
@@ -1915,15 +1823,6 @@ LOAD DATA LOCAL INPATH '/home/team28a/hw3/partition-load/2026-10-16.csv' OVERWRI
 
 ### Выполнение загрузки
 
-Задаем переменные окружения:
-
-```bash
-export JAVA_HOME=$HOME/apps/java
-export HADOOP_HOME=$HOME/apps/hadoop
-export HIVE_HOME=$HOME/apps/hive
-export PATH=$JAVA_HOME/bin:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$HIVE_HOME/bin:$PATH
-```
-
 Выполняем автоматически сгенерированный SQL через Beeline:
 
 ```bash
@@ -1944,18 +1843,7 @@ Hive создал три статические партиции и переме
 
 ## 18. Проверка партиций и данных
 
-После выполнения автоматизированной загрузки проверяем, что Hive зарегистрировал все созданные партиции, а данные физически находятся в HDFS.
-
-Все команды выполняются на `team-28-nn`.
-
-Задаем переменные окружения:
-
-```bash
-export JAVA_HOME=$HOME/apps/java
-export HADOOP_HOME=$HOME/apps/hadoop
-export HIVE_HOME=$HOME/apps/hive
-export PATH=$JAVA_HOME/bin:$HADOOP_HOME/bin:$HADOOP_HOME/sbin:$HIVE_HOME/bin:$PATH
-```
+После выполнения автоматизированной загрузки проверяем, что Hive зарегистрировал все созданные партиции, а данные физически находятся в HDFS. Все команды выполняются на `team-28-nn`.
 
 ### Проверка зарегистрированных партиций
 
@@ -2196,53 +2084,4 @@ event_date=2026-10-16
 
 ## 20. Итог
 
-В результате домашнего задания №3 Apache Hive `4.0.0-alpha-2` развернут поверх существующего HDFS/YARN-кластера команды `team28a`.
-
-Итоговая архитектура:
-
-```text
-team-28-nn
-├── NameNode
-├── DataNode
-├── ResourceManager
-├── NodeManager
-├── JobHistoryServer
-├── Hive Metastore :29083
-└── HiveServer2    :29000
-    └── Web UI     :29002
-
-team-28-00
-├── SecondaryNameNode
-├── DataNode
-└── NodeManager
-
-team-28-01
-├── DataNode
-├── NodeManager
-└── PostgreSQL     :29432
-```
-
-Для Hive Metastore используется отдельная база PostgreSQL `metastore`. Metadata Hive не хранятся во встроенной Derby-базе, поэтому embedded-подход не используется.
-
-HiveServer2 работает как отдельный клиентский сервис. Одновременное подключение двух независимых Beeline-клиентов было проверено двумя параллельными сессиями.
-
-В базе `hw3` созданы:
-
-```text
-events_staging
-events_partitioned
-```
-
-Таблица `events_partitioned` разбита на партиции по полю:
-
-```text
-event_date
-```
-
-Для автоматизированной загрузки исходный CSV разбивается по датам с помощью `awk`, после чего автоматически формируется SQL-файл с командами `LOAD DATA LOCAL ... PARTITION`. Фактическое размещение данных дополнительно проверено непосредственно в HDFS.
-
-Таким образом, выполнены оба основных требования домашнего задания:
-
-- Hive развернут без embedded-подхода и поддерживает одновременную работу нескольких клиентов;
-- реализована автоматизированная загрузка данных в партиционированную таблицу Hive.
-
+Apache Hive `4.0.0-alpha-2` развернут поверх существующего HDFS/YARN-кластера команды `team28a`. Для Hive Metastore используется отдельная база PostgreSQL `metastore`. Метаданные Hive не хранятся во встроенной Derby-базе, поэтому embedded-подход не используется.
